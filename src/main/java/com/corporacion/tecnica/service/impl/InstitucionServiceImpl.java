@@ -1,0 +1,38 @@
+package com.corporacion.tecnica.service.impl;
+
+import com.corporacion.tecnica.dto.institucion.InstitucionRequest;
+import com.corporacion.tecnica.dto.institucion.InstitucionResponse;
+import com.corporacion.tecnica.entity.Institucion;
+import com.corporacion.tecnica.exception.BusinessException;
+import com.corporacion.tecnica.mapper.InstitucionMapper;
+import com.corporacion.tecnica.repository.InstitucionRepository;
+import com.corporacion.tecnica.service.InstitucionService;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class InstitucionServiceImpl implements InstitucionService {
+
+    private final InstitucionRepository institucionRepository;
+    private final InstitucionMapper institucionMapper;
+
+    @Override
+    @Transactional
+    public InstitucionResponse crear(InstitucionRequest request) {
+        institucionRepository.findByCodigo(request.getCodigo()).ifPresent(i -> {
+            throw new BusinessException("Ya existe una institucion con ese codigo");
+        });
+        Institucion institucion = institucionMapper.toEntity(request);
+        return institucionMapper.toResponse(institucionRepository.save(institucion));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<InstitucionResponse> listar() {
+        return institucionRepository.findAll().stream().map(institucionMapper::toResponse).toList();
+    }
+}
+
