@@ -9,10 +9,11 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface MateriaMapper {
 
-    @Mapping(target = "curso", ignore = true)
+    @Mapping(target = "semestre", ignore = true)
     Materia toEntity(MateriaRequest request);
 
-    @Mapping(target = "cursoId", source = "curso.id")
+    @Mapping(target = "semestreId", source = "semestre.id")
+    @Mapping(target = "programaId", source = "semestre.programa.id")
     @Mapping(target = "institucionId", source = "institucion.id")
     MateriaResponse toResponse(Materia materia);
 }

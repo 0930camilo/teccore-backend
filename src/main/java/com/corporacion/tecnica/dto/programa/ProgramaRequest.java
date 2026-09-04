@@ -1,4 +1,4 @@
-package com.corporacion.tecnica.dto.curso;
+package com.corporacion.tecnica.dto.programa;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,16 +7,14 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class CursoRequest {
+public class ProgramaRequest {
 
     @NotBlank
     private String nombre;
 
-    private String jornada;
+    private Integer duracionSemestres;
 
-    private String periodoAcademico;
-
-    private Long programaId;
+    private String nivel;
 
     @NotNull
     private Long institucionId;

@@ -14,7 +14,8 @@ public class MateriaRequest {
 
     private Integer intensidadHoraria;
 
-    private Long cursoId;
+    @NotNull
+    private Long semestreId;
 
     @NotNull
     private Long institucionId;

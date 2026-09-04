@@ -9,7 +9,8 @@ public class MateriaResponse {
     private Long id;
     private String nombre;
     private Integer intensidadHoraria;
-    private Long cursoId;
+    private Long semestreId;
+    private Long programaId;
     private Long institucionId;
 }
 

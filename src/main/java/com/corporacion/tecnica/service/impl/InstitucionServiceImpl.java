@@ -1,5 +1,6 @@
 package com.corporacion.tecnica.service.impl;
 
+import com.corporacion.tecnica.dto.PageResponse;
 import com.corporacion.tecnica.dto.institucion.InstitucionRequest;
 import com.corporacion.tecnica.dto.institucion.InstitucionResponse;
 import com.corporacion.tecnica.entity.Institucion;
@@ -7,8 +8,10 @@ import com.corporacion.tecnica.exception.BusinessException;
 import com.corporacion.tecnica.mapper.InstitucionMapper;
 import com.corporacion.tecnica.repository.InstitucionRepository;
 import com.corporacion.tecnica.service.InstitucionService;
-import java.util.List;
+import com.corporacion.tecnica.util.ApiResponseFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,8 +34,23 @@ public class InstitucionServiceImpl implements InstitucionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<InstitucionResponse> listar() {
-        return institucionRepository.findAll().stream().map(institucionMapper::toResponse).toList();
+    public PageResponse<InstitucionResponse> listar(String q, int page, int size) {
+        String query = q == null ? "" : q.trim();
+        Page<InstitucionResponse> result;
+
+        if (query.isEmpty()) {
+            result = institucionRepository.findAll(PageRequest.of(page, size)).map(institucionMapper::toResponse);
+        } else {
+            result = institucionRepository.findByNombreContainingIgnoreCase(query, PageRequest.of(page, size))
+                    .map(institucionMapper::toResponse);
+
+            if (result.isEmpty()) {
+                result = institucionRepository.findByCodigoContainingIgnoreCase(query, PageRequest.of(page, size))
+                        .map(institucionMapper::toResponse);
+            }
+        }
+
+        return ApiResponseFactory.page(result);
     }
 }
 

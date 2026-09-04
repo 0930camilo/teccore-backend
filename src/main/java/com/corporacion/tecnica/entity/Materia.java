@@ -20,8 +20,8 @@ public class Materia extends BaseInstitutionEntity {
 
     private Integer intensidadHoraria;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "curso_id")
-    private Curso curso;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "semestre_id", nullable = false)
+    private Semestre semestre;
 }
 

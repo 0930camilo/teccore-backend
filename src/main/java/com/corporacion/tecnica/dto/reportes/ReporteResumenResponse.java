@@ -9,6 +9,7 @@ public class ReporteResumenResponse {
     private final long totalAlumnos;
     private final long totalDocentes;
     private final long totalCursos;
+    private final long totalSemestres;
     private final long totalPagos;
 }
 

@@ -15,7 +15,7 @@ public class Programa extends BaseInstitutionEntity {
     @Column(nullable = false)
     private String nombre;
 
-    private Integer duracionMeses;
+    private Integer duracionSemestres;
 
     private String nivel;
 }

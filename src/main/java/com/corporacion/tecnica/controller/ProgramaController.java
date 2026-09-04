@@ -2,9 +2,9 @@ package com.corporacion.tecnica.controller;
 
 import com.corporacion.tecnica.dto.ApiResponse;
 import com.corporacion.tecnica.dto.PageResponse;
-import com.corporacion.tecnica.dto.institucion.InstitucionRequest;
-import com.corporacion.tecnica.dto.institucion.InstitucionResponse;
-import com.corporacion.tecnica.service.InstitucionService;
+import com.corporacion.tecnica.dto.programa.ProgramaRequest;
+import com.corporacion.tecnica.dto.programa.ProgramaResponse;
+import com.corporacion.tecnica.service.ProgramaService;
 import com.corporacion.tecnica.util.ApiResponseFactory;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,24 +18,25 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/instituciones")
+@RequestMapping("/programas")
 @RequiredArgsConstructor
-public class InstitucionController {
+public class ProgramaController {
 
-    private final InstitucionService institucionService;
+    private final ProgramaService programaService;
 
     @PostMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<ApiResponse<InstitucionResponse>> crear(@Valid @RequestBody InstitucionRequest request) {
-        return ResponseEntity.status(201).body(ApiResponseFactory.created("Institucion creada", institucionService.crear(request)));
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION')")
+    public ResponseEntity<ApiResponse<ProgramaResponse>> crear(@Valid @RequestBody ProgramaRequest request) {
+        return ResponseEntity.status(201).body(ApiResponseFactory.created("Programa creado", programaService.crear(request)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION')")
-    public ResponseEntity<ApiResponse<PageResponse<InstitucionResponse>>> listar(
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION','DOCENTE')")
+    public ResponseEntity<ApiResponse<PageResponse<ProgramaResponse>>> listar(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(ApiResponseFactory.ok("Listado de instituciones", institucionService.listar(q, page, size)));
+        return ResponseEntity.ok(ApiResponseFactory.ok("Listado de programas", programaService.listar(q, page, size)));
     }
 }
+

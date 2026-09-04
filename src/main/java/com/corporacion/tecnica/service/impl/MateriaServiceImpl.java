@@ -4,9 +4,12 @@ import com.corporacion.tecnica.dto.PageResponse;
 import com.corporacion.tecnica.dto.materia.MateriaRequest;
 import com.corporacion.tecnica.dto.materia.MateriaResponse;
 import com.corporacion.tecnica.entity.Materia;
+import com.corporacion.tecnica.entity.Semestre;
+import com.corporacion.tecnica.exception.BusinessException;
+import com.corporacion.tecnica.exception.ResourceNotFoundException;
 import com.corporacion.tecnica.mapper.MateriaMapper;
-import com.corporacion.tecnica.repository.CursoRepository;
 import com.corporacion.tecnica.repository.MateriaRepository;
+import com.corporacion.tecnica.repository.SemestreRepository;
 import com.corporacion.tecnica.service.MateriaService;
 import com.corporacion.tecnica.util.ApiResponseFactory;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MateriaServiceImpl implements MateriaService {
 
     private final MateriaRepository materiaRepository;
-    private final CursoRepository cursoRepository;
+    private final SemestreRepository semestreRepository;
     private final MateriaMapper materiaMapper;
     private final InstitutionScopeResolver institutionScopeResolver;
 
@@ -29,9 +32,15 @@ public class MateriaServiceImpl implements MateriaService {
     public MateriaResponse crear(MateriaRequest request) {
         Materia materia = materiaMapper.toEntity(request);
         materia.setInstitucion(institutionScopeResolver.getRequiredInstitution(request.getInstitucionId()));
-        if (request.getCursoId() != null) {
-            materia.setCurso(cursoRepository.findById(request.getCursoId()).orElse(null));
+
+        Semestre semestre = semestreRepository.findById(request.getSemestreId())
+                .orElseThrow(() -> new ResourceNotFoundException("Semestre no encontrado"));
+
+        if (!semestre.getInstitucion().getId().equals(materia.getInstitucion().getId())) {
+            throw new BusinessException("El semestre no pertenece a la institucion enviada");
         }
+
+        materia.setSemestre(semestre);
         return materiaMapper.toResponse(materiaRepository.save(materia));
     }
 
