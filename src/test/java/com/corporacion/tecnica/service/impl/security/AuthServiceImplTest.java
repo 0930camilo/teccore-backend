@@ -15,9 +15,11 @@ import com.corporacion.tecnica.dto.auth.RegisterRequest;
 import com.corporacion.tecnica.entity.Institucion;
 import com.corporacion.tecnica.entity.Rol;
 import com.corporacion.tecnica.entity.RolNombre;
+import com.corporacion.tecnica.entity.Sede;
 import com.corporacion.tecnica.entity.Usuario;
 import com.corporacion.tecnica.repository.InstitucionRepository;
 import com.corporacion.tecnica.repository.RolRepository;
+import com.corporacion.tecnica.repository.SedeRepository;
 import com.corporacion.tecnica.repository.UsuarioRepository;
 import com.corporacion.tecnica.security.JwtService;
 import com.corporacion.tecnica.service.impl.InstitutionScopeResolver;
@@ -50,6 +52,8 @@ class AuthServiceImplTest {
     private org.springframework.security.authentication.AuthenticationManager authenticationManager;
     @Mock
     private InstitucionRepository institucionRepository;
+    @Mock
+    private SedeRepository sedeRepository;
 
     private AuthServiceImpl authService;
     private JwtService jwtService;
@@ -61,7 +65,7 @@ class AuthServiceImplTest {
         ReflectionTestUtils.setField(jwtService, "jwtSecret", "test-secret-key-test-secret-key-test");
         ReflectionTestUtils.setField(jwtService, "jwtExpirationMs", 3600000L);
         institutionScopeResolver = new InstitutionScopeResolver(institucionRepository);
-        authService = new AuthServiceImpl(authenticationManager, usuarioRepository, rolRepository, passwordEncoder, jwtService, institutionScopeResolver);
+        authService = new AuthServiceImpl(authenticationManager, usuarioRepository, rolRepository, passwordEncoder, jwtService, institutionScopeResolver, sedeRepository);
     }
 
     @AfterEach
@@ -71,7 +75,7 @@ class AuthServiceImplTest {
 
     @Test
     void registerPermiteBootstrapDeSuperAdminSinInstitucion() {
-        RegisterRequest request = buildRequest("Dueño", "owner@teccore.com", "secret", RolNombre.SUPER_ADMIN, null);
+        RegisterRequest request = buildRequest("Dueño", "owner@teccore.com", "secret", RolNombre.SUPER_ADMIN, null, null);
         Rol rol = buildRol(RolNombre.SUPER_ADMIN);
 
         when(usuarioRepository.count()).thenReturn(0L);
@@ -93,17 +97,19 @@ class AuthServiceImplTest {
         assertEquals(RolNombre.SUPER_ADMIN, savedUser.getRol().getNombre());
         assertNotNull(response.getToken());
         assertNull(response.getInstitucionId());
+        assertNull(response.getSedeId());
         verify(institucionRepository, never()).findById(any());
+        verify(sedeRepository, never()).findById(any());
     }
 
     @Test
     void registerRechazaRegistroSinSuperAdminAutenticadoCuandoYaExisteBootstrap() {
-        RegisterRequest request = buildRequest("Admin", "admin@inst.com", "secret", RolNombre.ADMIN_INSTITUCION, 10L);
+        RegisterRequest request = buildRequest("Admin", "admin@inst.com", "secret", RolNombre.ADMIN_INSTITUCION, 10L, null);
         when(usuarioRepository.count()).thenReturn(1L);
 
         AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> authService.register(request));
 
-        assertTrue(exception.getMessage().contains("Solo el SUPER_ADMIN puede registrar administradores"));
+        assertTrue(exception.getMessage().contains("No autorizado"));
         verify(usuarioRepository, never()).save(any(Usuario.class));
     }
 
@@ -114,7 +120,7 @@ class AuthServiceImplTest {
                 null,
                 List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"))));
 
-        RegisterRequest request = buildRequest("Admin Inst", "admin@inst.com", "secret", RolNombre.ADMIN_INSTITUCION, 10L);
+        RegisterRequest request = buildRequest("Admin Inst", "admin@inst.com", "secret", RolNombre.ADMIN_INSTITUCION, 10L, null);
         Rol rol = buildRol(RolNombre.ADMIN_INSTITUCION);
         Institucion institucion = buildInstitucion(10L);
 
@@ -137,7 +143,9 @@ class AuthServiceImplTest {
         assertNotNull(savedUser.getInstitucion());
         assertEquals(10L, savedUser.getInstitucion().getId());
         assertEquals(RolNombre.ADMIN_INSTITUCION, savedUser.getRol().getNombre());
+        assertNull(savedUser.getSede());
         assertEquals(10L, response.getInstitucionId());
+        assertNull(response.getSedeId());
     }
 
     @Test
@@ -147,7 +155,7 @@ class AuthServiceImplTest {
                 null,
                 List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"))));
 
-        RegisterRequest request = buildRequest("Docente", "docente@inst.com", "secret", RolNombre.DOCENTE, 10L);
+        RegisterRequest request = buildRequest("Docente", "docente@inst.com", "secret", RolNombre.DOCENTE, 10L, null);
         when(usuarioRepository.count()).thenReturn(1L);
 
         AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> authService.register(request));
@@ -156,13 +164,50 @@ class AuthServiceImplTest {
         verify(usuarioRepository, never()).save(any(Usuario.class));
     }
 
-    private RegisterRequest buildRequest(String nombre, String email, String password, RolNombre rol, Long institucionId) {
+    @Test
+    void registerPermiteAAdminInstitucionCrearAdminSedeDeSuInstitucion() {
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                "admin@institucion.com",
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN_INSTITUCION"))));
+
+        RegisterRequest request = buildRequest("Admin Sede", "admin.sede@inst.com", "secret", RolNombre.ADMIN_SEDE, 10L, 100L);
+        Rol rol = buildRol(RolNombre.ADMIN_SEDE);
+        Institucion institucion = buildInstitucion(10L);
+        Sede sede = buildSede(100L, institucion);
+
+        when(usuarioRepository.count()).thenReturn(2L);
+        when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
+        when(rolRepository.findByNombre(RolNombre.ADMIN_SEDE)).thenReturn(Optional.of(rol));
+        when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded-secret");
+        when(sedeRepository.findById(100L)).thenReturn(Optional.of(sede));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
+            Usuario usuario = invocation.getArgument(0);
+            usuario.setId(3L);
+            return usuario;
+        });
+
+        AuthResponse response = authService.register(request);
+
+        ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).save(captor.capture());
+        Usuario savedUser = captor.getValue();
+
+        assertEquals(RolNombre.ADMIN_SEDE, savedUser.getRol().getNombre());
+        assertEquals(10L, savedUser.getInstitucion().getId());
+        assertEquals(100L, savedUser.getSede().getId());
+        assertEquals(10L, response.getInstitucionId());
+        assertEquals(100L, response.getSedeId());
+    }
+
+    private RegisterRequest buildRequest(String nombre, String email, String password, RolNombre rol, Long institucionId, Long sedeId) {
         RegisterRequest request = new RegisterRequest();
         request.setNombre(nombre);
         request.setEmail(email);
         request.setPassword(password);
         request.setRol(rol);
         request.setInstitucionId(institucionId);
+        request.setSedeId(sedeId);
         return request;
     }
 
@@ -179,6 +224,14 @@ class AuthServiceImplTest {
         institucion.setCodigo("INST-01");
         institucion.setNombre("Institucion Demo");
         return institucion;
+    }
+
+    private Sede buildSede(Long id, Institucion institucion) {
+        Sede sede = new Sede();
+        sede.setId(id);
+        sede.setNombre("Sede Centro");
+        sede.setInstitucion(institucion);
+        return sede;
     }
 }
 

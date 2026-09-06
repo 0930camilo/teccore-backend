@@ -48,6 +48,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 } else {
                     TenantContext.clear();
                 }
+                Long sedeId = jwtService.extractSedeId(jwt);
+                if (sedeId != null) {
+                    TenantContext.setSedeId(sedeId);
+                }
             }
         }
         filterChain.doFilter(request, response);

@@ -20,6 +20,10 @@ public class TenantHeaderFilter extends OncePerRequestFilter {
             if (institutionHeader != null && !institutionHeader.isBlank()) {
                 TenantContext.setInstitutionId(Long.parseLong(institutionHeader));
             }
+            String sedeHeader = request.getHeader("X-Sede-Id");
+            if (sedeHeader != null && !sedeHeader.isBlank()) {
+                TenantContext.setSedeId(Long.parseLong(sedeHeader));
+            }
             filterChain.doFilter(request, response);
         } finally {
             TenantContext.clear();

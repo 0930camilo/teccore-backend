@@ -2,11 +2,11 @@ package com.corporacion.tecnica.controller;
 
 import com.corporacion.tecnica.dto.ApiResponse;
 import com.corporacion.tecnica.dto.PageResponse;
-import com.corporacion.tecnica.dto.programa.ProgramaRequest;
-import com.corporacion.tecnica.dto.programa.ProgramaResponse;
-import com.corporacion.tecnica.dto.programa.ProgramaUpdateRequest;
+import com.corporacion.tecnica.dto.sede.SedeRequest;
+import com.corporacion.tecnica.dto.sede.SedeResponse;
+import com.corporacion.tecnica.dto.sede.SedeUpdateRequest;
 import com.corporacion.tecnica.entity.EstadoRegistro;
-import com.corporacion.tecnica.service.ProgramaService;
+import com.corporacion.tecnica.service.SedeService;
 import com.corporacion.tecnica.util.ApiResponseFactory;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,33 +22,34 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/programas")
+@RequestMapping("/sedes")
 @RequiredArgsConstructor
-public class ProgramaController {
+public class SedeController {
 
-    private final ProgramaService programaService;
+    private final SedeService sedeService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN_SEDE')")
-    public ResponseEntity<ApiResponse<ProgramaResponse>> crear(@Valid @RequestBody ProgramaRequest request) {
-        return ResponseEntity.status(201).body(ApiResponseFactory.created("Programa creado", programaService.crear(request)));
+    @PreAuthorize("hasRole('ADMIN_INSTITUCION')")
+    public ResponseEntity<ApiResponse<SedeResponse>> crear(@Valid @RequestBody SedeRequest request) {
+        return ResponseEntity.status(201).body(ApiResponseFactory.created("Sede creada", sedeService.crear(request)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN_SEDE')")
-    public ResponseEntity<ApiResponse<ProgramaResponse>> actualizar(@PathVariable Long id, @Valid @RequestBody ProgramaUpdateRequest request) {
-        return ResponseEntity.ok(ApiResponseFactory.ok("Programa actualizado", programaService.actualizar(id, request)));
+    @PreAuthorize("hasRole('ADMIN_INSTITUCION')")
+    public ResponseEntity<ApiResponse<SedeResponse>> actualizar(@PathVariable Long id, @Valid @RequestBody SedeUpdateRequest request) {
+        return ResponseEntity.ok(ApiResponseFactory.ok("Sede actualizada", sedeService.actualizar(id, request)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN_SEDE','DOCENTE')")
-    public ResponseEntity<ApiResponse<PageResponse<ProgramaResponse>>> listar(
+    @PreAuthorize("hasRole('ADMIN_INSTITUCION')")
+    public ResponseEntity<ApiResponse<PageResponse<SedeResponse>>> listar(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String ciudad,
             @RequestParam(required = false) EstadoRegistro estado,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(ApiResponseFactory.ok("Listado de programas", programaService.listar(q, nombre, estado, page, size)));
+        return ResponseEntity.ok(ApiResponseFactory.ok("Listado de sedes", sedeService.listar(q, nombre, ciudad, estado, page, size)));
     }
 }
 

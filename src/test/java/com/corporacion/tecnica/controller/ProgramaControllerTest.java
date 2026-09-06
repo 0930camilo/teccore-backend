@@ -2,6 +2,7 @@ package com.corporacion.tecnica.controller;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -11,10 +12,12 @@ import com.corporacion.tecnica.entity.EstadoRegistro;
 import com.corporacion.tecnica.entity.Programa;
 import com.corporacion.tecnica.entity.Rol;
 import com.corporacion.tecnica.entity.RolNombre;
+import com.corporacion.tecnica.entity.Sede;
 import com.corporacion.tecnica.entity.Usuario;
 import com.corporacion.tecnica.repository.InstitucionRepository;
 import com.corporacion.tecnica.repository.ProgramaRepository;
 import com.corporacion.tecnica.repository.RolRepository;
+import com.corporacion.tecnica.repository.SedeRepository;
 import com.corporacion.tecnica.repository.UsuarioRepository;
 import com.corporacion.tecnica.util.TenantContext;
 import java.math.BigDecimal;
@@ -42,19 +45,23 @@ class ProgramaControllerTest {
     @Autowired
     private RolRepository rolRepository;
     @Autowired
+    private SedeRepository sedeRepository;
+    @Autowired
     private UsuarioRepository usuarioRepository;
 
     private Institucion institucionNorte;
+    private Sede sedeNorte;
     private Programa programa;
 
     @BeforeEach
     void setUp() {
-        Rol adminRole = ensureRole(RolNombre.ADMIN_INSTITUCION);
+        Rol adminRole = ensureRole(RolNombre.ADMIN_SEDE);
         Rol docenteRole = ensureRole(RolNombre.DOCENTE);
 
         institucionNorte = createInstitution("INST-PROG", "Institucion Programas");
-        createUser("Admin Inst", "admin.inst@test.com", adminRole, institucionNorte);
-        createUser("Docente Inst", "docente.inst@test.com", docenteRole, institucionNorte);
+        sedeNorte = createSede("Sede Norte", institucionNorte);
+        createUser("Admin Sede", "admin.sede@test.com", adminRole, institucionNorte, sedeNorte);
+        createUser("Docente Sede", "docente.sede@test.com", docenteRole, institucionNorte, sedeNorte);
 
         programa = new Programa();
         programa.setNombre("Ingenieria de Software");
@@ -62,6 +69,7 @@ class ProgramaControllerTest {
         programa.setNivel("Profesional");
         programa.setCostoSemestral(new BigDecimal("1500000.00"));
         programa.setInstitucion(institucionNorte);
+        programa.setSede(sedeNorte);
         programa = programaRepository.save(programa);
 
         Programa programaSecundario = new Programa();
@@ -71,6 +79,7 @@ class ProgramaControllerTest {
         programaSecundario.setCostoSemestral(new BigDecimal("900000.00"));
         programaSecundario.setEstado(EstadoRegistro.INACTIVO);
         programaSecundario.setInstitucion(institucionNorte);
+        programaSecundario.setSede(sedeNorte);
         programaRepository.save(programaSecundario);
     }
 
@@ -82,8 +91,9 @@ class ProgramaControllerTest {
     @Test
     void listarProgramasDebeIncluirCostoSemestral() throws Exception {
         mockMvc.perform(get("/programas")
-                        .with(user("admin.inst@test.com").roles("ADMIN_INSTITUCION"))
+                        .with(user("admin.sede@test.com").roles("ADMIN_SEDE"))
                         .header("X-Institucion-Id", institucionNorte.getId())
+                        .header("X-Sede-Id", sedeNorte.getId())
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
@@ -95,8 +105,9 @@ class ProgramaControllerTest {
     @Test
     void listarProgramasDebeFiltrarPorNombre() throws Exception {
         mockMvc.perform(get("/programas")
-                        .with(user("admin.inst@test.com").roles("ADMIN_INSTITUCION"))
+                        .with(user("admin.sede@test.com").roles("ADMIN_SEDE"))
                         .header("X-Institucion-Id", institucionNorte.getId())
+                        .header("X-Sede-Id", sedeNorte.getId())
                         .param("nombre", "software")
                         .param("page", "0")
                         .param("size", "10"))
@@ -111,8 +122,9 @@ class ProgramaControllerTest {
     @Test
     void listarProgramasDebeFiltrarPorEstado() throws Exception {
         mockMvc.perform(get("/programas")
-                        .with(user("admin.inst@test.com").roles("ADMIN_INSTITUCION"))
+                        .with(user("admin.sede@test.com").roles("ADMIN_SEDE"))
                         .header("X-Institucion-Id", institucionNorte.getId())
+                        .header("X-Sede-Id", sedeNorte.getId())
                         .param("estado", "INACTIVO")
                         .param("page", "0")
                         .param("size", "10"))
@@ -124,10 +136,11 @@ class ProgramaControllerTest {
     }
 
     @Test
-    void adminInstitucionDebePoderEditarProgramaConCostoSemestral() throws Exception {
+    void adminSedeDebePoderEditarProgramaConCostoSemestral() throws Exception {
         mockMvc.perform(put("/programas/{id}", programa.getId())
-                        .with(user("admin.inst@test.com").roles("ADMIN_INSTITUCION"))
+                        .with(user("admin.sede@test.com").roles("ADMIN_SEDE"))
                         .header("X-Institucion-Id", institucionNorte.getId())
+                        .header("X-Sede-Id", sedeNorte.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -136,9 +149,9 @@ class ProgramaControllerTest {
                                   "nivel": "Universitario",
                                   "costoSemestral": 1750000.50,
                                   "estado": "INACTIVO",
-                                  "institucionId": %d
+                                  "sedeId": %d
                                 }
-                                """.formatted(institucionNorte.getId())))
+                                """.formatted(sedeNorte.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Programa actualizado"))
                 .andExpect(jsonPath("$.data.nombre").value("Ingenieria de Sistemas"))
@@ -151,8 +164,9 @@ class ProgramaControllerTest {
     @Test
     void docenteNoDebePoderEditarPrograma() throws Exception {
         mockMvc.perform(put("/programas/{id}", programa.getId())
-                        .with(user("docente.inst@test.com").roles("DOCENTE"))
+                        .with(user("docente.sede@test.com").roles("DOCENTE"))
                         .header("X-Institucion-Id", institucionNorte.getId())
+                        .header("X-Sede-Id", sedeNorte.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -160,10 +174,60 @@ class ProgramaControllerTest {
                                   "duracionSemestres": 8,
                                   "nivel": "Tecnico",
                                   "costoSemestral": 900000,
-                                  "institucionId": %d
+                                  "sedeId": %d
                                 }
-                                """.formatted(institucionNorte.getId())))
+                                """.formatted(sedeNorte.getId())))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminSedeDebePoderCrearProgramaSinEstadoYQuedarActivo() throws Exception {
+        mockMvc.perform(post("/programas")
+                        .with(user("admin.sede@test.com").roles("ADMIN_SEDE"))
+                        .header("X-Institucion-Id", institucionNorte.getId())
+                        .header("X-Sede-Id", sedeNorte.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nombre": "sistemas",
+                                  "duracionSemestres": 2,
+                                  "nivel": "tecnico",
+                                  "costoSemestral": 3,
+                                  "sedeId": %d
+                                }
+                                """.formatted(sedeNorte.getId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.message").value("Programa creado"))
+                .andExpect(jsonPath("$.data.nombre").value("sistemas"))
+                .andExpect(jsonPath("$.data.duracionSemestres").value(2))
+                .andExpect(jsonPath("$.data.nivel").value("tecnico"))
+                .andExpect(jsonPath("$.data.costoSemestral").value(3))
+                .andExpect(jsonPath("$.data.estado").value("ACTIVO"))
+                .andExpect(jsonPath("$.data.sedeId").value(sedeNorte.getId()))
+                .andExpect(jsonPath("$.data.institucionId").value(institucionNorte.getId()));
+    }
+
+    @Test
+    void adminSedeDebePoderCrearProgramaConEstadoExplicito() throws Exception {
+        mockMvc.perform(post("/programas")
+                        .with(user("admin.sede@test.com").roles("ADMIN_SEDE"))
+                        .header("X-Institucion-Id", institucionNorte.getId())
+                        .header("X-Sede-Id", sedeNorte.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nombre": "diseño grafico",
+                                  "duracionSemestres": 4,
+                                  "nivel": "tecnico",
+                                  "costoSemestral": 450000,
+                                  "estado": "INACTIVO",
+                                  "sedeId": %d
+                                }
+                                """.formatted(sedeNorte.getId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.message").value("Programa creado"))
+                .andExpect(jsonPath("$.data.nombre").value("diseño grafico"))
+                .andExpect(jsonPath("$.data.estado").value("INACTIVO"));
     }
 
     private Rol ensureRole(RolNombre nombre) {
@@ -182,13 +246,23 @@ class ProgramaControllerTest {
         return institucionRepository.save(institucion);
     }
 
-    private Usuario createUser(String nombre, String email, Rol rol, Institucion institucion) {
+    private Sede createSede(String nombre, Institucion institucion) {
+        Sede sede = new Sede();
+        sede.setNombre(nombre);
+        sede.setCiudad("Bogota");
+        sede.setDireccion("Calle 10");
+        sede.setInstitucion(institucion);
+        return sedeRepository.save(sede);
+    }
+
+    private Usuario createUser(String nombre, String email, Rol rol, Institucion institucion, Sede sede) {
         Usuario usuario = new Usuario();
         usuario.setNombre(nombre);
         usuario.setEmail(email);
         usuario.setPassword("encoded-password");
         usuario.setRol(rol);
         usuario.setInstitucion(institucion);
+        usuario.setSede(sede);
         return usuarioRepository.save(usuario);
     }
 }

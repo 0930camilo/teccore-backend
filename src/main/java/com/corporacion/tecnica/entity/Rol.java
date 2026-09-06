@@ -15,7 +15,7 @@ import lombok.Setter;
 public class Rol extends BaseAuditEntity {
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 50)
     private RolNombre nombre;
 
     private String descripcion;

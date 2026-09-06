@@ -38,6 +38,9 @@ public class JwtService {
         if (userPrincipal.getInstitutionId() != null) {
             claims.put("institutionId", userPrincipal.getInstitutionId());
         }
+        if (userPrincipal.getSedeId() != null) {
+            claims.put("sedeId", userPrincipal.getSedeId());
+        }
         return generateToken(claims, userPrincipal);
     }
 
@@ -59,6 +62,11 @@ public class JwtService {
     public Long extractInstitutionId(String token) {
         Number institutionId = extractAllClaims(token).get("institutionId", Number.class);
         return institutionId != null ? institutionId.longValue() : null;
+    }
+
+    public Long extractSedeId(String token) {
+        Number sedeId = extractAllClaims(token).get("sedeId", Number.class);
+        return sedeId != null ? sedeId.longValue() : null;
     }
 
     private boolean isTokenExpired(String token) {

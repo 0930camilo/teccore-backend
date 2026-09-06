@@ -40,11 +40,17 @@ public abstract class BaseAuditEntity {
         LocalDateTime now = LocalDateTime.now();
         this.fechaCreacion = now;
         this.fechaActualizacion = now;
+        if (this.estado == null) {
+            this.estado = EstadoRegistro.ACTIVO;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.fechaActualizacion = LocalDateTime.now();
+        if (this.estado == null) {
+            this.estado = EstadoRegistro.ACTIVO;
+        }
     }
 }
 

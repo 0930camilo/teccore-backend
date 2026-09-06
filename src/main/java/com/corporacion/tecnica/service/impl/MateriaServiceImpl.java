@@ -3,6 +3,7 @@ package com.corporacion.tecnica.service.impl;
 import com.corporacion.tecnica.dto.PageResponse;
 import com.corporacion.tecnica.dto.materia.MateriaRequest;
 import com.corporacion.tecnica.dto.materia.MateriaResponse;
+import com.corporacion.tecnica.entity.Institucion;
 import com.corporacion.tecnica.entity.Materia;
 import com.corporacion.tecnica.entity.Semestre;
 import com.corporacion.tecnica.exception.BusinessException;
@@ -26,18 +27,31 @@ public class MateriaServiceImpl implements MateriaService {
     private final SemestreRepository semestreRepository;
     private final MateriaMapper materiaMapper;
     private final InstitutionScopeResolver institutionScopeResolver;
+    private final SedeScopeResolver sedeScopeResolver;
 
     @Override
     @Transactional
     public MateriaResponse crear(MateriaRequest request) {
         Materia materia = materiaMapper.toEntity(request);
-        materia.setInstitucion(institutionScopeResolver.getRequiredInstitution(request.getInstitucionId()));
 
         Semestre semestre = semestreRepository.findById(request.getSemestreId())
                 .orElseThrow(() -> new ResourceNotFoundException("Semestre no encontrado"));
 
+        Long institucionId = request.getInstitucionId() != null
+                ? request.getInstitucionId()
+                : (semestre.getInstitucion() != null ? semestre.getInstitucion().getId() : null);
+
+        Institucion institucion = institutionScopeResolver.getRequiredInstitution(institucionId);
+        materia.setInstitucion(institucion);
+
         if (!semestre.getInstitucion().getId().equals(materia.getInstitucion().getId())) {
             throw new BusinessException("El semestre no pertenece a la institucion enviada");
+        }
+
+        Long scopedSedeId = sedeScopeResolver.getCurrentSedeScope();
+        if (scopedSedeId != null && semestre.getPrograma() != null && semestre.getPrograma().getSede() != null
+                && !scopedSedeId.equals(semestre.getPrograma().getSede().getId())) {
+            throw new BusinessException("El semestre no pertenece a la sede autenticada");
         }
 
         materia.setSemestre(semestre);

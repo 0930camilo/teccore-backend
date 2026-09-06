@@ -15,5 +15,6 @@ public class ProgramaResponse {
     private BigDecimal costoSemestral;
     private EstadoRegistro estado;
     private Long institucionId;
+    private Long sedeId;
 }
 

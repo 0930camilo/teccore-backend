@@ -23,6 +23,8 @@ public class RegisterRequest {
 
     private Long institucionId;
 
+    private Long sedeId;
+
     @NotNull
     private RolNombre rol;
 }

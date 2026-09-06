@@ -5,9 +5,11 @@ import com.corporacion.tecnica.dto.auth.LoginRequest;
 import com.corporacion.tecnica.dto.auth.RegisterRequest;
 import com.corporacion.tecnica.entity.Rol;
 import com.corporacion.tecnica.entity.RolNombre;
+import com.corporacion.tecnica.entity.Sede;
 import com.corporacion.tecnica.entity.Usuario;
 import com.corporacion.tecnica.exception.BusinessException;
 import com.corporacion.tecnica.repository.RolRepository;
+import com.corporacion.tecnica.repository.SedeRepository;
 import com.corporacion.tecnica.repository.UsuarioRepository;
 import com.corporacion.tecnica.security.JwtService;
 import com.corporacion.tecnica.security.UserPrincipal;
@@ -34,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final InstitutionScopeResolver institutionScopeResolver;
+    private final SedeRepository sedeRepository;
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -48,6 +51,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(usuario.getEmail())
                 .rol(usuario.getRol().getNombre().name())
                 .institucionId(usuario.getInstitucion() != null ? usuario.getInstitucion().getId() : null)
+                .sedeId(usuario.getSede() != null ? usuario.getSede().getId() : null)
                 .build();
     }
 
@@ -68,10 +72,17 @@ public class AuthServiceImpl implements AuthService {
         usuario.setEmail(request.getEmail());
         usuario.setPassword(passwordEncoder.encode(request.getPassword()));
         usuario.setRol(rol);
+
         if (request.getRol() == RolNombre.SUPER_ADMIN) {
             usuario.setInstitucion(null);
-        } else {
+            usuario.setSede(null);
+        } else if (request.getRol() == RolNombre.ADMIN_INSTITUCION) {
             usuario.setInstitucion(institutionScopeResolver.getRequiredInstitution(request.getInstitucionId()));
+            usuario.setSede(null);
+        } else {
+            Sede sede = resolveSedeForRegistration(request.getSedeId(), request.getInstitucionId());
+            usuario.setInstitucion(sede.getInstitucion());
+            usuario.setSede(sede);
         }
 
         Usuario guardado = usuarioRepository.save(usuario);
@@ -83,6 +94,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(guardado.getEmail())
                 .rol(guardado.getRol().getNombre().name())
                 .institucionId(guardado.getInstitucion() != null ? guardado.getInstitucion().getId() : null)
+                .sedeId(guardado.getSede() != null ? guardado.getSede().getId() : null)
                 .build();
     }
 
@@ -96,27 +108,64 @@ public class AuthServiceImpl implements AuthService {
             if (request.getRol() != RolNombre.SUPER_ADMIN) {
                 throw new BusinessException("El primer usuario del sistema debe ser SUPER_ADMIN");
             }
-            if (request.getInstitucionId() != null) {
-                throw new BusinessException("El SUPER_ADMIN no debe tener institucion asignada");
+            if (request.getInstitucionId() != null || request.getSedeId() != null) {
+                throw new BusinessException("El SUPER_ADMIN no debe tener institucion ni sede asignada");
             }
             return;
         }
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || authentication instanceof AnonymousAuthenticationToken
-                || authentication.getAuthorities().stream().noneMatch(a -> "ROLE_SUPER_ADMIN".equals(a.getAuthority()))) {
-            throw new AccessDeniedException("Solo el SUPER_ADMIN puede registrar administradores");
+
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+            throw new AccessDeniedException("No autorizado para registrar usuarios");
         }
 
-        if (request.getRol() != RolNombre.ADMIN_INSTITUCION) {
-            throw new AccessDeniedException("El SUPER_ADMIN solo puede registrar usuarios ADMIN_INSTITUCION");
+        boolean isSuperAdmin = authentication.getAuthorities().stream().anyMatch(a -> "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
+        boolean isAdminInstitucion = authentication.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN_INSTITUCION".equals(a.getAuthority()));
+
+        if (isSuperAdmin) {
+            if (request.getRol() != RolNombre.ADMIN_INSTITUCION) {
+                throw new AccessDeniedException("El SUPER_ADMIN solo puede registrar usuarios ADMIN_INSTITUCION");
+            }
+            if (request.getInstitucionId() == null) {
+                throw new BusinessException("Debe enviar institucionId para un ADMIN_INSTITUCION");
+            }
+            if (request.getSedeId() != null) {
+                throw new BusinessException("ADMIN_INSTITUCION no debe tener sede asignada");
+            }
+            return;
         }
 
-        if (request.getInstitucionId() == null) {
-            throw new BusinessException("Debe enviar institucionId para un ADMIN_INSTITUCION");
+        if (isAdminInstitucion) {
+            if (request.getRol() != RolNombre.ADMIN_SEDE) {
+                throw new AccessDeniedException("El ADMIN_INSTITUCION solo puede registrar usuarios ADMIN_SEDE");
+            }
+            if (request.getSedeId() == null) {
+                throw new BusinessException("Debe enviar sedeId para un ADMIN_SEDE");
+            }
+            return;
         }
+
+        throw new AccessDeniedException("No autorizado para registrar usuarios");
+    }
+
+    private Sede resolveSedeForRegistration(Long requestSedeId, Long requestInstitucionId) {
+        if (requestSedeId == null) {
+            throw new BusinessException("Debe enviar sedeId para un ADMIN_SEDE");
+        }
+        Sede sede = sedeRepository.findById(requestSedeId)
+                .orElseThrow(() -> new BusinessException("Sede no encontrada"));
+
+        if (requestInstitucionId != null && (sede.getInstitucion() == null || !requestInstitucionId.equals(sede.getInstitucion().getId()))) {
+            throw new BusinessException("La sede no pertenece a la institucion enviada");
+        }
+
+        Long scopedInstitutionId = institutionScopeResolver.resolveInstitutionId(sede.getInstitucion() != null ? sede.getInstitucion().getId() : null);
+        if (sede.getInstitucion() == null || !scopedInstitutionId.equals(sede.getInstitucion().getId())) {
+            throw new BusinessException("La sede no pertenece a la institucion autenticada");
+        }
+
+        return sede;
     }
 }
 

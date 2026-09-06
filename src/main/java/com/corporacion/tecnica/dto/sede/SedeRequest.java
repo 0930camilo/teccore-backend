@@ -1,5 +1,6 @@
-package com.corporacion.tecnica.dto.materia;
+package com.corporacion.tecnica.dto.sede;
 
+import com.corporacion.tecnica.entity.EstadoRegistro;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -7,18 +8,18 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class MateriaRequest {
+public class SedeRequest {
 
     @NotBlank
     private String nombre;
 
-    private Integer intensidadHoraria;
+    private String ciudad;
+
+    private String direccion;
 
     @NotNull
-    private Long semestreId;
-
     private Long institucionId;
 
-    private Long sedeId;
+    private EstadoRegistro estado;
 }
 

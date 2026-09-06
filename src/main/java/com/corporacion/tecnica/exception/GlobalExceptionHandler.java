@@ -3,6 +3,7 @@ package com.corporacion.tecnica.exception;
 import com.corporacion.tecnica.dto.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -51,6 +53,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleUnhandled(Exception ex) {
+        log.error("Error interno del servidor no controlado", ex);
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor", null);
     }
 

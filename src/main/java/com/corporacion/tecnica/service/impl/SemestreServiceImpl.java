@@ -3,6 +3,7 @@ package com.corporacion.tecnica.service.impl;
 import com.corporacion.tecnica.dto.PageResponse;
 import com.corporacion.tecnica.dto.semestre.SemestreRequest;
 import com.corporacion.tecnica.dto.semestre.SemestreResponse;
+import com.corporacion.tecnica.entity.Institucion;
 import com.corporacion.tecnica.entity.Programa;
 import com.corporacion.tecnica.entity.Semestre;
 import com.corporacion.tecnica.exception.BusinessException;
@@ -26,18 +27,30 @@ public class SemestreServiceImpl implements SemestreService {
     private final ProgramaRepository programaRepository;
     private final SemestreMapper semestreMapper;
     private final InstitutionScopeResolver institutionScopeResolver;
+    private final SedeScopeResolver sedeScopeResolver;
 
     @Override
     @Transactional
     public SemestreResponse crear(SemestreRequest request) {
         Semestre semestre = semestreMapper.toEntity(request);
-        semestre.setInstitucion(institutionScopeResolver.getRequiredInstitution(request.getInstitucionId()));
 
         Programa programa = programaRepository.findById(request.getProgramaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Programa no encontrado"));
 
+        Long institucionId = request.getInstitucionId() != null
+                ? request.getInstitucionId()
+                : (programa.getInstitucion() != null ? programa.getInstitucion().getId() : null);
+
+        Institucion institucion = institutionScopeResolver.getRequiredInstitution(institucionId);
+        semestre.setInstitucion(institucion);
+
         if (!programa.getInstitucion().getId().equals(semestre.getInstitucion().getId())) {
             throw new BusinessException("El programa no pertenece a la institucion enviada");
+        }
+
+        Long scopedSedeId = sedeScopeResolver.getCurrentSedeScope();
+        if (scopedSedeId != null && programa.getSede() != null && !scopedSedeId.equals(programa.getSede().getId())) {
+            throw new BusinessException("El programa no pertenece a la sede autenticada");
         }
 
         semestre.setPrograma(programa);

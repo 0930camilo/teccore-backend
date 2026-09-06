@@ -4,6 +4,7 @@ import com.corporacion.tecnica.dto.PageResponse;
 import com.corporacion.tecnica.dto.usuario.UsuarioResponse;
 import com.corporacion.tecnica.dto.usuario.UsuarioUpdateRequest;
 import com.corporacion.tecnica.entity.RolNombre;
+import com.corporacion.tecnica.entity.Sede;
 import com.corporacion.tecnica.entity.Usuario;
 import com.corporacion.tecnica.exception.BusinessException;
 import com.corporacion.tecnica.exception.ResourceNotFoundException;
@@ -31,6 +32,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioMapper usuarioMapper;
     private final RolRepository rolRepository;
     private final InstitutionScopeResolver institutionScopeResolver;
+    private final SedeScopeResolver sedeScopeResolver;
 
     @Override
     @Transactional(readOnly = true)
@@ -64,15 +66,24 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .orElseThrow(() -> new BusinessException("Rol no configurado")));
 
         if (request.getRol() == RolNombre.SUPER_ADMIN) {
-            if (request.getInstitucionId() != null) {
-                throw new BusinessException("El SUPER_ADMIN no debe tener institucion asignada");
+            if (request.getInstitucionId() != null || request.getSedeId() != null) {
+                throw new BusinessException("El SUPER_ADMIN no debe tener institucion ni sede asignada");
             }
             usuario.setInstitucion(null);
-        } else {
+            usuario.setSede(null);
+        } else if (request.getRol() == RolNombre.ADMIN_INSTITUCION) {
             if (request.getInstitucionId() == null) {
                 throw new BusinessException("Debe enviar institucionId para un ADMIN_INSTITUCION");
             }
+            if (request.getSedeId() != null) {
+                throw new BusinessException("ADMIN_INSTITUCION no debe tener sede asignada");
+            }
             usuario.setInstitucion(institutionScopeResolver.getRequiredInstitution(request.getInstitucionId()));
+            usuario.setSede(null);
+        } else {
+            Sede sede = sedeScopeResolver.getRequiredSede(request.getSedeId());
+            usuario.setInstitucion(sede.getInstitucion());
+            usuario.setSede(sede);
         }
 
         if (request.getEstado() != null) {

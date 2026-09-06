@@ -16,8 +16,9 @@ public class SemestreRequest {
     @NotNull
     private Long programaId;
 
-    @NotNull
     private Long institucionId;
+
+    private Long sedeId;
 }
 
 

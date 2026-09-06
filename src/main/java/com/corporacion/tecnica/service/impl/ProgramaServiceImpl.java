@@ -24,17 +24,16 @@ public class ProgramaServiceImpl implements ProgramaService {
 
     private final ProgramaRepository programaRepository;
     private final ProgramaMapper programaMapper;
-    private final InstitutionScopeResolver institutionScopeResolver;
+    private final SedeScopeResolver sedeScopeResolver;
 
     @Override
     @Transactional
     public ProgramaResponse crear(ProgramaRequest request) {
         Programa programa = programaMapper.toEntity(request);
+        programa.setSede(sedeScopeResolver.getRequiredSede(request.getSedeId()));
+        programa.setInstitucion(programa.getSede().getInstitucion());
         programa.setNombre(request.getNombre().trim());
-        if (request.getEstado() != null) {
-            programa.setEstado(request.getEstado());
-        }
-        programa.setInstitucion(institutionScopeResolver.getRequiredInstitution(request.getInstitucionId()));
+        programa.setEstado(request.getEstado() != null ? request.getEstado() : EstadoRegistro.ACTIVO);
         return programaMapper.toResponse(programaRepository.save(programa));
     }
 
@@ -43,10 +42,9 @@ public class ProgramaServiceImpl implements ProgramaService {
     public ProgramaResponse actualizar(Long id, ProgramaUpdateRequest request) {
         Programa programa = programaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Programa no encontrado"));
-
-        Long scopedInstitutionId = institutionScopeResolver.resolveInstitutionId(request.getInstitucionId());
-        if (programa.getInstitucion() == null || !scopedInstitutionId.equals(programa.getInstitucion().getId())) {
-            throw new BusinessException("El programa no pertenece a la institucion autenticada");
+        Long scopedSedeId = sedeScopeResolver.resolveSedeId(request.getSedeId());
+        if (programa.getSede() == null || !scopedSedeId.equals(programa.getSede().getId())) {
+            throw new BusinessException("El programa no pertenece a la sede autenticada");
         }
 
         programa.setNombre(request.getNombre().trim());
@@ -56,7 +54,8 @@ public class ProgramaServiceImpl implements ProgramaService {
         if (request.getEstado() != null) {
             programa.setEstado(request.getEstado());
         }
-        programa.setInstitucion(institutionScopeResolver.getRequiredInstitution(request.getInstitucionId()));
+        programa.setSede(sedeScopeResolver.getRequiredSede(request.getSedeId()));
+        programa.setInstitucion(programa.getSede().getInstitucion());
 
         return programaMapper.toResponse(programaRepository.save(programa));
     }
@@ -64,7 +63,7 @@ public class ProgramaServiceImpl implements ProgramaService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ProgramaResponse> listar(String q, String nombre, EstadoRegistro estado, int page, int size) {
-        Long institucionId = institutionScopeResolver.resolveInstitutionId(null);
+        Long sedeId = sedeScopeResolver.resolveSedeId(null);
         String query = normalize(nombre);
         if (query == null) {
             query = normalize(q);
@@ -72,11 +71,11 @@ public class ProgramaServiceImpl implements ProgramaService {
         Page<ProgramaResponse> result;
         if (estado == null) {
             result = programaRepository
-                    .findByInstitucionIdAndNombreContainingIgnoreCase(institucionId, query == null ? "" : query, PageRequest.of(page, size))
+                    .findBySedeIdAndNombreContainingIgnoreCase(sedeId, query == null ? "" : query, PageRequest.of(page, size))
                     .map(programaMapper::toResponse);
         } else {
             result = programaRepository
-                    .findByInstitucionIdAndEstadoAndNombreContainingIgnoreCase(institucionId, estado, query == null ? "" : query, PageRequest.of(page, size))
+                    .findBySedeIdAndEstadoAndNombreContainingIgnoreCase(sedeId, estado, query == null ? "" : query, PageRequest.of(page, size))
                     .map(programaMapper::toResponse);
         }
         return ApiResponseFactory.page(result);

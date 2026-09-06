@@ -17,6 +17,10 @@ public class UserPrincipal implements UserDetails {
         return usuario.getInstitucion() != null ? usuario.getInstitucion().getId() : null;
     }
 
+    public Long getSedeId() {
+        return usuario.getSede() != null ? usuario.getSede().getId() : null;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getRol().getNombre().name()));

@@ -12,6 +12,7 @@ public interface ProgramaMapper {
     Programa toEntity(ProgramaRequest request);
 
     @Mapping(target = "institucionId", source = "institucion.id")
+    @Mapping(target = "sedeId", source = "sede.id")
     ProgramaResponse toResponse(Programa programa);
 }
 

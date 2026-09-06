@@ -21,5 +21,6 @@ public class UsuarioUpdateRequest {
     private RolNombre rol;
 
     private Long institucionId;
+    private Long sedeId;
     private EstadoRegistro estado;
 }

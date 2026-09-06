@@ -25,13 +25,13 @@ public class SemestreController {
     private final SemestreService semestreService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN_INSTITUCION')")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','ADMIN_SEDE')")
     public ResponseEntity<ApiResponse<SemestreResponse>> crear(@Valid @RequestBody SemestreRequest request) {
         return ResponseEntity.status(201).body(ApiResponseFactory.created("Semestre creado", semestreService.crear(request)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','DOCENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','ADMIN_SEDE','DOCENTE')")
     public ResponseEntity<ApiResponse<PageResponse<SemestreResponse>>> listar(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,

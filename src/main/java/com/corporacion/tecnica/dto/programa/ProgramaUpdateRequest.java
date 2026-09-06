@@ -25,7 +25,7 @@ public class ProgramaUpdateRequest {
     private EstadoRegistro estado;
 
     @NotNull
-    private Long institucionId;
+    private Long sedeId;
 }
 
 

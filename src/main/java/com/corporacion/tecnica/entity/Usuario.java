@@ -27,5 +27,9 @@ public class Usuario extends BaseInstitutionEntity {
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "rol_id", nullable = false)
     private Rol rol;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sede_id")
+    private Sede sede;
 }
 
