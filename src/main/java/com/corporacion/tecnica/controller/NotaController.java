@@ -25,13 +25,13 @@ public class NotaController {
     private final NotaService notaService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION','DOCENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','DOCENTE')")
     public ResponseEntity<ApiResponse<NotaResponse>> crear(@Valid @RequestBody NotaRequest request) {
         return ResponseEntity.status(201).body(ApiResponseFactory.created("Nota registrada", notaService.crear(request)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','DOCENTE','ESTUDIANTE')")
     public ResponseEntity<ApiResponse<PageResponse<NotaResponse>>> listar(
             @RequestParam(required = false) String periodo,
             @RequestParam(defaultValue = "0") int page,

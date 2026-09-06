@@ -25,13 +25,13 @@ public class DocenteController {
     private final DocenteService docenteService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION')")
+    @PreAuthorize("hasRole('ADMIN_INSTITUCION')")
     public ResponseEntity<ApiResponse<DocenteResponse>> crear(@Valid @RequestBody DocenteRequest request) {
         return ResponseEntity.status(201).body(ApiResponseFactory.created("Docente creado", docenteService.crear(request)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION')")
+    @PreAuthorize("hasRole('ADMIN_INSTITUCION')")
     public ResponseEntity<ApiResponse<PageResponse<DocenteResponse>>> listar(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,

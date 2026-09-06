@@ -20,7 +20,7 @@ public class ReporteController {
     private final ReporteService reporteService;
 
     @GetMapping("/resumen-institucion")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION','AUXILIAR_CONTABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','AUXILIAR_CONTABLE')")
     public ResponseEntity<ApiResponse<ReporteResumenResponse>> resumen(@RequestParam(required = false) Long institucionId) {
         return ResponseEntity.ok(ApiResponseFactory.ok("Resumen institucional", reporteService.resumenInstitucion(institucionId)));
     }

@@ -25,13 +25,13 @@ public class ProgramaController {
     private final ProgramaService programaService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION')")
+    @PreAuthorize("hasRole('ADMIN_INSTITUCION')")
     public ResponseEntity<ApiResponse<ProgramaResponse>> crear(@Valid @RequestBody ProgramaRequest request) {
         return ResponseEntity.status(201).body(ApiResponseFactory.created("Programa creado", programaService.crear(request)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION','DOCENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','DOCENTE')")
     public ResponseEntity<ApiResponse<PageResponse<ProgramaResponse>>> listar(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,

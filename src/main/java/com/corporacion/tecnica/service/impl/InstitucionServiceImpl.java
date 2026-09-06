@@ -28,6 +28,7 @@ public class InstitucionServiceImpl implements InstitucionService {
 
     private final InstitucionRepository institucionRepository;
     private final InstitucionMapper institucionMapper;
+    private final InstitutionScopeResolver institutionScopeResolver;
 
     @Override
     @Transactional
@@ -74,12 +75,13 @@ public class InstitucionServiceImpl implements InstitucionService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<InstitucionResponse> listar(String q, String codigo, String nombre, String nit, EstadoRegistro estado, int page, int size) {
-        Page<InstitucionResponse> result = institucionRepository.findAll(buildSpecification(q, codigo, nombre, nit, estado), PageRequest.of(page, size))
+        Long tenantId = institutionScopeResolver.getCurrentInstitutionScope();
+        Page<InstitucionResponse> result = institucionRepository.findAll(buildSpecification(q, codigo, nombre, nit, estado, tenantId), PageRequest.of(page, size))
                 .map(institucionMapper::toResponse);
         return ApiResponseFactory.page(result);
     }
 
-    private Specification<Institucion> buildSpecification(String q, String codigo, String nombre, String nit, EstadoRegistro estado) {
+    private Specification<Institucion> buildSpecification(String q, String codigo, String nombre, String nit, EstadoRegistro estado, Long tenantId) {
         String query = normalize(q);
         String codigoFilter = normalize(codigo);
         String nombreFilter = normalize(nombre);
@@ -88,6 +90,9 @@ public class InstitucionServiceImpl implements InstitucionService {
         return (root, querySpec, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            if (tenantId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("id"), tenantId));
+            }
             if (estado != null) {
                 predicates.add(criteriaBuilder.equal(root.get("estado"), estado));
             }

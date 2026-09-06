@@ -14,7 +14,7 @@ public class UserPrincipal implements UserDetails {
     private final Usuario usuario;
 
     public Long getInstitutionId() {
-        return usuario.getInstitucion().getId();
+        return usuario.getInstitucion() != null ? usuario.getInstitucion().getId() : null;
     }
 
     @Override

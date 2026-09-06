@@ -45,6 +45,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Long institutionId = jwtService.extractInstitutionId(jwt);
                 if (institutionId != null) {
                     TenantContext.setInstitutionId(institutionId);
+                } else {
+                    TenantContext.clear();
                 }
             }
         }

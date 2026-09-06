@@ -12,8 +12,8 @@ import lombok.Setter;
 @MappedSuperclass
 public abstract class BaseInstitutionEntity extends BaseAuditEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "institucion_id")
     private Institucion institucion;
 }
 

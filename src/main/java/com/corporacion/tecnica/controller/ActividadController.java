@@ -25,13 +25,13 @@ public class ActividadController {
     private final ActividadService actividadService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION','DOCENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','DOCENTE')")
     public ResponseEntity<ApiResponse<ActividadResponse>> crear(@Valid @RequestBody ActividadRequest request) {
         return ResponseEntity.status(201).body(ApiResponseFactory.created("Actividad creada", actividadService.crear(request)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','DOCENTE','ESTUDIANTE')")
     public ResponseEntity<ApiResponse<PageResponse<ActividadResponse>>> listar(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,

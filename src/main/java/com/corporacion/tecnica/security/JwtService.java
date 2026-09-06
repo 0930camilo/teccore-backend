@@ -35,7 +35,9 @@ public class JwtService {
     public String generateToken(UserPrincipal userPrincipal) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", userPrincipal.getAuthorities().iterator().next().getAuthority());
-        claims.put("institutionId", userPrincipal.getInstitutionId());
+        if (userPrincipal.getInstitutionId() != null) {
+            claims.put("institutionId", userPrincipal.getInstitutionId());
+        }
         return generateToken(claims, userPrincipal);
     }
 
@@ -55,7 +57,8 @@ public class JwtService {
     }
 
     public Long extractInstitutionId(String token) {
-        return extractAllClaims(token).get("institutionId", Long.class);
+        Number institutionId = extractAllClaims(token).get("institutionId", Number.class);
+        return institutionId != null ? institutionId.longValue() : null;
     }
 
     private boolean isTokenExpired(String token) {

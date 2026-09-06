@@ -25,13 +25,13 @@ public class PagoController {
     private final PagoService pagoService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION','AUXILIAR_CONTABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','AUXILIAR_CONTABLE')")
     public ResponseEntity<ApiResponse<PagoResponse>> crear(@Valid @RequestBody PagoRequest request) {
         return ResponseEntity.status(201).body(ApiResponseFactory.created("Pago registrado", pagoService.crear(request)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN_INSTITUCION','AUXILIAR_CONTABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','AUXILIAR_CONTABLE')")
     public ResponseEntity<ApiResponse<PageResponse<PagoResponse>>> listar(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,

@@ -5,6 +5,9 @@ import com.corporacion.tecnica.exception.BusinessException;
 import com.corporacion.tecnica.exception.ResourceNotFoundException;
 import com.corporacion.tecnica.repository.InstitucionRepository;
 import com.corporacion.tecnica.util.TenantContext;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,6 +20,13 @@ public class InstitutionScopeResolver {
     }
 
     public Long resolveInstitutionId(Long requestInstitutionId) {
+        if (isSuperAdminAuthenticated()) {
+            if (requestInstitutionId == null) {
+                throw new BusinessException("Debe enviar institucionId");
+            }
+            return requestInstitutionId;
+        }
+
         Long tenantId = TenantContext.getInstitutionId();
         if (tenantId != null) {
             if (requestInstitutionId != null && !tenantId.equals(requestInstitutionId)) {
@@ -34,6 +44,18 @@ public class InstitutionScopeResolver {
         Long institutionId = resolveInstitutionId(requestInstitutionId);
         return institucionRepository.findById(institutionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Institucion no encontrada"));
+    }
+
+    public Long getCurrentInstitutionScope() {
+        return isSuperAdminAuthenticated() ? null : TenantContext.getInstitutionId();
+    }
+
+    public boolean isSuperAdminAuthenticated() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)
+                && authentication.getAuthorities().stream().anyMatch(a -> "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
     }
 }
 

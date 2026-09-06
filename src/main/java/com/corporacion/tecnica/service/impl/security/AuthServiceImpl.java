@@ -4,6 +4,7 @@ import com.corporacion.tecnica.dto.auth.AuthResponse;
 import com.corporacion.tecnica.dto.auth.LoginRequest;
 import com.corporacion.tecnica.dto.auth.RegisterRequest;
 import com.corporacion.tecnica.entity.Rol;
+import com.corporacion.tecnica.entity.RolNombre;
 import com.corporacion.tecnica.entity.Usuario;
 import com.corporacion.tecnica.exception.BusinessException;
 import com.corporacion.tecnica.repository.RolRepository;
@@ -15,6 +16,10 @@ import com.corporacion.tecnica.service.security.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,13 +47,15 @@ public class AuthServiceImpl implements AuthService {
                 .tipo("Bearer")
                 .email(usuario.getEmail())
                 .rol(usuario.getRol().getNombre().name())
-                .institucionId(usuario.getInstitucion().getId())
+                .institucionId(usuario.getInstitucion() != null ? usuario.getInstitucion().getId() : null)
                 .build();
     }
 
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        validateRegistrationPolicy(request);
+
         usuarioRepository.findByEmail(request.getEmail()).ifPresent(user -> {
             throw new BusinessException("Ya existe un usuario con ese email");
         });
@@ -61,7 +68,11 @@ public class AuthServiceImpl implements AuthService {
         usuario.setEmail(request.getEmail());
         usuario.setPassword(passwordEncoder.encode(request.getPassword()));
         usuario.setRol(rol);
-        usuario.setInstitucion(institutionScopeResolver.getRequiredInstitution(request.getInstitucionId()));
+        if (request.getRol() == RolNombre.SUPER_ADMIN) {
+            usuario.setInstitucion(null);
+        } else {
+            usuario.setInstitucion(institutionScopeResolver.getRequiredInstitution(request.getInstitucionId()));
+        }
 
         Usuario guardado = usuarioRepository.save(usuario);
         String token = jwtService.generateToken(new UserPrincipal(guardado));
@@ -71,8 +82,41 @@ public class AuthServiceImpl implements AuthService {
                 .tipo("Bearer")
                 .email(guardado.getEmail())
                 .rol(guardado.getRol().getNombre().name())
-                .institucionId(guardado.getInstitucion().getId())
+                .institucionId(guardado.getInstitucion() != null ? guardado.getInstitucion().getId() : null)
                 .build();
+    }
+
+    private void validateRegistrationPolicy(RegisterRequest request) {
+        if (request.getRol() == null) {
+            throw new BusinessException("Debe enviar el rol del usuario");
+        }
+
+        boolean initialSetup = usuarioRepository.count() == 0;
+        if (initialSetup) {
+            if (request.getRol() != RolNombre.SUPER_ADMIN) {
+                throw new BusinessException("El primer usuario del sistema debe ser SUPER_ADMIN");
+            }
+            if (request.getInstitucionId() != null) {
+                throw new BusinessException("El SUPER_ADMIN no debe tener institucion asignada");
+            }
+            return;
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken
+                || authentication.getAuthorities().stream().noneMatch(a -> "ROLE_SUPER_ADMIN".equals(a.getAuthority()))) {
+            throw new AccessDeniedException("Solo el SUPER_ADMIN puede registrar administradores");
+        }
+
+        if (request.getRol() != RolNombre.ADMIN_INSTITUCION) {
+            throw new AccessDeniedException("El SUPER_ADMIN solo puede registrar usuarios ADMIN_INSTITUCION");
+        }
+
+        if (request.getInstitucionId() == null) {
+            throw new BusinessException("Debe enviar institucionId para un ADMIN_INSTITUCION");
+        }
     }
 }
 
