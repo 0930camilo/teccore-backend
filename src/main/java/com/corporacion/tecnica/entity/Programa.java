@@ -3,6 +3,7 @@ package com.corporacion.tecnica.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,5 +19,8 @@ public class Programa extends BaseInstitutionEntity {
     private Integer duracionSemestres;
 
     private String nivel;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal costoSemestral;
 }
 

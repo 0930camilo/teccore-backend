@@ -1,5 +1,7 @@
 package com.corporacion.tecnica.dto.programa;
 
+import com.corporacion.tecnica.entity.EstadoRegistro;
+import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,6 +12,8 @@ public class ProgramaResponse {
     private String nombre;
     private Integer duracionSemestres;
     private String nivel;
+    private BigDecimal costoSemestral;
+    private EstadoRegistro estado;
     private Long institucionId;
 }
 

@@ -1,8 +1,8 @@
 package com.corporacion.tecnica.dto.programa;
 
 import com.corporacion.tecnica.entity.EstadoRegistro;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import lombok.Getter;
@@ -10,7 +10,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ProgramaRequest {
+public class ProgramaUpdateRequest {
 
     @NotBlank
     private String nombre;
@@ -27,4 +27,5 @@ public class ProgramaRequest {
     @NotNull
     private Long institucionId;
 }
+
 
