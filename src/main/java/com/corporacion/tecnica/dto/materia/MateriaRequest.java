@@ -1,5 +1,6 @@
 package com.corporacion.tecnica.dto.materia;
 
+import com.corporacion.tecnica.entity.EstadoRegistro;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -20,5 +21,7 @@ public class MateriaRequest {
     private Long institucionId;
 
     private Long sedeId;
+
+    private EstadoRegistro estado;
 }
 

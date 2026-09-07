@@ -1,8 +1,11 @@
 package com.corporacion.tecnica.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -141,6 +144,61 @@ class MateriaControllerTest {
                 .andExpect(jsonPath("$.data.semestreId").value(semestreSede1.getId()))
                 .andExpect(jsonPath("$.data.programaId").value(programaSede1.getId()))
                 .andExpect(jsonPath("$.data.institucionId").value(institucion.getId()));
+    }
+
+    @Test
+    void adminSedeDebeObtenerMateriaPorIdDeSuSede() throws Exception {
+        mockMvc.perform(get("/materias/" + materiaSede1.getId())
+                        .with(user("admin.sede1@test.com").roles("ADMIN_SEDE"))
+                        .header("X-Institucion-Id", institucion.getId())
+                        .header("X-Sede-Id", sede1.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Materia encontrada"))
+                .andExpect(jsonPath("$.data.id").value(materiaSede1.getId()))
+                .andExpect(jsonPath("$.data.nombre").value("Programacion I"))
+                .andExpect(jsonPath("$.data.semestreId").value(semestreSede1.getId()))
+                .andExpect(jsonPath("$.data.programaId").value(programaSede1.getId()));
+    }
+
+    @Test
+    void adminSedeNoDebeObtenerMateriaDeOtraSede() throws Exception {
+        mockMvc.perform(get("/materias/" + materiaSede2.getId())
+                        .with(user("admin.sede1@test.com").roles("ADMIN_SEDE"))
+                        .header("X-Institucion-Id", institucion.getId())
+                        .header("X-Sede-Id", sede1.getId()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void adminSedeDebeActualizarMateriaDeSuSede() throws Exception {
+        mockMvc.perform(put("/materias/" + materiaSede1.getId())
+                        .with(user("admin.sede1@test.com").roles("ADMIN_SEDE"))
+                        .header("X-Institucion-Id", institucion.getId())
+                        .header("X-Sede-Id", sede1.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nombre": "Programacion Avanzada I",
+                                  "intensidadHoraria": 80,
+                                  "semestreId": %d
+                                }
+                                """.formatted(semestreSede1.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Materia actualizada"))
+                .andExpect(jsonPath("$.data.nombre").value("Programacion Avanzada I"))
+                .andExpect(jsonPath("$.data.intensidadHoraria").value(80));
+    }
+
+    @Test
+    void adminSedeDebeEliminarMateriaDeSuSede() throws Exception {
+        mockMvc.perform(delete("/materias/" + materiaSede1.getId())
+                        .with(user("admin.sede1@test.com").roles("ADMIN_SEDE"))
+                        .header("X-Institucion-Id", institucion.getId())
+                        .header("X-Sede-Id", sede1.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Materia eliminada"));
+
+        assertThat(materiaRepository.findById(materiaSede1.getId())).isEmpty();
     }
 
     private Rol ensureRole(RolNombre nombre) {

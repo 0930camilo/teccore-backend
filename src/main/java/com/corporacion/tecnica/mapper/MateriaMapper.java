@@ -13,8 +13,11 @@ public interface MateriaMapper {
     Materia toEntity(MateriaRequest request);
 
     @Mapping(target = "semestreId", source = "semestre.id")
+    @Mapping(target = "semestreNombre", source = "semestre.nombre")
     @Mapping(target = "programaId", source = "semestre.programa.id")
+    @Mapping(target = "programaNombre", source = "semestre.programa.nombre")
     @Mapping(target = "institucionId", source = "institucion.id")
+    @Mapping(target = "institucionNombre", source = "institucion.nombre")
     MateriaResponse toResponse(Materia materia);
 }
 

@@ -55,7 +55,55 @@ public class MateriaServiceImpl implements MateriaService {
         }
 
         materia.setSemestre(semestre);
+        if (request.getEstado() != null) {
+            materia.setEstado(request.getEstado());
+        }
+
         return materiaMapper.toResponse(materiaRepository.save(materia));
+    }
+
+    @Override
+    @Transactional
+    public MateriaResponse actualizar(Long id, MateriaRequest request) {
+        Materia materia = findMateriaScoped(id);
+
+        Semestre semestre = semestreRepository.findById(request.getSemestreId())
+                .orElseThrow(() -> new ResourceNotFoundException("Semestre no encontrado"));
+
+        Long institucionId = request.getInstitucionId() != null
+                ? request.getInstitucionId()
+                : (semestre.getInstitucion() != null ? semestre.getInstitucion().getId() : null);
+
+        Institucion institucion = institutionScopeResolver.getRequiredInstitution(institucionId);
+
+        if (!semestre.getInstitucion().getId().equals(institucion.getId())) {
+            throw new BusinessException("El semestre no pertenece a la institucion enviada");
+        }
+
+        Long scopedSedeId = sedeScopeResolver.getCurrentSedeScope();
+        if (scopedSedeId != null && semestre.getPrograma() != null && semestre.getPrograma().getSede() != null
+                && !scopedSedeId.equals(semestre.getPrograma().getSede().getId())) {
+            throw new BusinessException("El semestre no pertenece a la sede autenticada");
+        }
+
+        materia.setNombre(request.getNombre());
+        if (request.getIntensidadHoraria() != null) {
+            materia.setIntensidadHoraria(request.getIntensidadHoraria());
+        }
+        materia.setSemestre(semestre);
+        materia.setInstitucion(institucion);
+        if (request.getEstado() != null) {
+            materia.setEstado(request.getEstado());
+        }
+
+        return materiaMapper.toResponse(materiaRepository.save(materia));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MateriaResponse obtenerPorId(Long id) {
+        Materia materia = findMateriaScoped(id);
+        return materiaMapper.toResponse(materia);
     }
 
     @Override
@@ -87,6 +135,32 @@ public class MateriaServiceImpl implements MateriaService {
         }
 
         return ApiResponseFactory.page(result);
+    }
+
+    @Override
+    @Transactional
+    public void eliminar(Long id) {
+        Materia materia = findMateriaScoped(id);
+        materiaRepository.delete(materia);
+    }
+
+    private Materia findMateriaScoped(Long id) {
+        Materia materia = materiaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Materia no encontrada"));
+
+        Long institucionId = institutionScopeResolver.resolveInstitutionId(null);
+        if (institucionId != null && materia.getInstitucion() != null && !institucionId.equals(materia.getInstitucion().getId())) {
+            throw new BusinessException("La materia no pertenece a la institucion autenticada");
+        }
+
+        Long sedeId = sedeScopeResolver.getCurrentSedeScope();
+        if (sedeId != null && materia.getSemestre() != null && materia.getSemestre().getPrograma() != null
+                && materia.getSemestre().getPrograma().getSede() != null
+                && !sedeId.equals(materia.getSemestre().getPrograma().getSede().getId())) {
+            throw new BusinessException("La materia no pertenece a la sede autenticada");
+        }
+
+        return materia;
     }
 }
 
