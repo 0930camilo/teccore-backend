@@ -80,6 +80,7 @@ class SemestreControllerTest {
         Semestre semestre1 = new Semestre();
         semestre1.setNumero(1);
         semestre1.setNombre("Semestre 1");
+        semestre1.setAnio(2026);
         semestre1.setPrograma(programa);
         semestre1.setInstitucion(institucion);
         semestreRepository.save(semestre1);
@@ -101,6 +102,8 @@ class SemestreControllerTest {
                                 {
                                   "nombre": "bb",
                                   "numero": 2,
+                                  "anio": 2026,
+                                  "estado": "ACTIVO",
                                   "programaId": %d,
                                   "institucionId": %d,
                                   "sedeId": %d
@@ -110,8 +113,12 @@ class SemestreControllerTest {
                 .andExpect(jsonPath("$.message").value("Semestre creado"))
                 .andExpect(jsonPath("$.data.nombre").value("bb"))
                 .andExpect(jsonPath("$.data.numero").value(2))
+                .andExpect(jsonPath("$.data.anio").value(2026))
+                .andExpect(jsonPath("$.data.estado").value("ACTIVO"))
                 .andExpect(jsonPath("$.data.programaId").value(programa.getId()))
-                .andExpect(jsonPath("$.data.institucionId").value(institucion.getId()));
+                .andExpect(jsonPath("$.data.programaNombre").value("Sistemas"))
+                .andExpect(jsonPath("$.data.institucionId").value(institucion.getId()))
+                .andExpect(jsonPath("$.data.institucionNombre").value("Institucion Semestres"));
     }
 
     @Test
@@ -144,7 +151,11 @@ class SemestreControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Listado de semestres"))
                 .andExpect(jsonPath("$.data.totalElements").value(1))
-                .andExpect(jsonPath("$.data.content[0].nombre").value("Semestre 1"));
+                .andExpect(jsonPath("$.data.content[0].nombre").value("Semestre 1"))
+                .andExpect(jsonPath("$.data.content[0].anio").value(2026))
+                .andExpect(jsonPath("$.data.content[0].estado").value("ACTIVO"))
+                .andExpect(jsonPath("$.data.content[0].programaNombre").value("Sistemas"))
+                .andExpect(jsonPath("$.data.content[0].institucionNombre").value("Institucion Semestres"));
     }
 
     @Test

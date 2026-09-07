@@ -3,6 +3,7 @@ package com.corporacion.tecnica.service.impl;
 import com.corporacion.tecnica.dto.PageResponse;
 import com.corporacion.tecnica.dto.semestre.SemestreRequest;
 import com.corporacion.tecnica.dto.semestre.SemestreResponse;
+import com.corporacion.tecnica.entity.EstadoRegistro;
 import com.corporacion.tecnica.entity.Institucion;
 import com.corporacion.tecnica.entity.Programa;
 import com.corporacion.tecnica.entity.Semestre;
@@ -56,6 +57,14 @@ public class SemestreServiceImpl implements SemestreService {
         semestre.setPrograma(programa);
         if (semestre.getNombre() == null || semestre.getNombre().isBlank()) {
             semestre.setNombre("Semestre " + semestre.getNumero());
+        }
+        if (request.getEstado() != null) {
+            semestre.setEstado(request.getEstado());
+        } else if (semestre.getEstado() == null) {
+            semestre.setEstado(EstadoRegistro.ACTIVO);
+        }
+        if (request.getAnio() != null) {
+            semestre.setAnio(request.getAnio());
         }
 
         return semestreMapper.toResponse(semestreRepository.save(semestre));

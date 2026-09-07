@@ -24,6 +24,9 @@ public class Semestre extends BaseInstitutionEntity {
     @Column(nullable = false)
     private String nombre;
 
+    @Column(name = "anio")
+    private Integer anio;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "programa_id", nullable = false)
     private Programa programa;

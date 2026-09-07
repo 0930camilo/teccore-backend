@@ -1,5 +1,6 @@
 package com.corporacion.tecnica.dto.semestre;
 
+import com.corporacion.tecnica.entity.EstadoRegistro;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,6 +13,10 @@ public class SemestreRequest {
     private Integer numero;
 
     private String nombre;
+
+    private Integer anio;
+
+    private EstadoRegistro estado;
 
     @NotNull
     private Long programaId;
