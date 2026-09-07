@@ -14,7 +14,9 @@ public class SemestreResponse {
     private Integer anio;
     private EstadoRegistro estado;
 
+    private Long programaId;
     private String programaNombre;
+    private Long institucionId;
     private String institucionNombre;
 }
 

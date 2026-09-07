@@ -61,10 +61,31 @@ public class MateriaServiceImpl implements MateriaService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<MateriaResponse> listar(String q, int page, int size) {
-        Long institucionId = institutionScopeResolver.resolveInstitutionId(null);
-        Page<MateriaResponse> result = materiaRepository
-                .findByInstitucionIdAndNombreContainingIgnoreCase(institucionId, q == null ? "" : q, PageRequest.of(page, size))
-                .map(materiaMapper::toResponse);
+        String nombre = q == null ? "" : q;
+        PageRequest pageable = PageRequest.of(page, size);
+        Long sedeId = sedeScopeResolver.getCurrentSedeScope();
+
+        Page<MateriaResponse> result;
+
+        if (sedeId != null) {
+            result = materiaRepository
+                    .findBySemestreProgramaSedeIdAndNombreContainingIgnoreCase(
+                            sedeId,
+                            nombre,
+                            pageable
+                    )
+                    .map(materiaMapper::toResponse);
+        } else {
+            Long institucionId = institutionScopeResolver.resolveInstitutionId(null);
+            result = materiaRepository
+                    .findByInstitucionIdAndNombreContainingIgnoreCase(
+                            institucionId,
+                            nombre,
+                            pageable
+                    )
+                    .map(materiaMapper::toResponse);
+        }
+
         return ApiResponseFactory.page(result);
     }
 }
