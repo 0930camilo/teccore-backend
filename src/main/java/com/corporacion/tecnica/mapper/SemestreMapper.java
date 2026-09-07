@@ -12,10 +12,7 @@ public interface SemestreMapper {
     @Mapping(target = "programa", ignore = true)
     Semestre toEntity(SemestreRequest request);
 
-    @Mapping(target = "programaId", source = "programa.id")
     @Mapping(target = "programaNombre", source = "programa.nombre")
-    @Mapping(target = "institucionId", source = "institucion.id")
     @Mapping(target = "institucionNombre", source = "institucion.nombre")
     SemestreResponse toResponse(Semestre semestre);
 }
-

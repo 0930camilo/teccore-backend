@@ -5,7 +5,15 @@ import com.corporacion.tecnica.dto.semestre.SemestreRequest;
 import com.corporacion.tecnica.dto.semestre.SemestreResponse;
 
 public interface SemestreService {
+
     SemestreResponse crear(SemestreRequest request);
-    PageResponse<SemestreResponse> listar(String q, int page, int size);
+
+    SemestreResponse actualizar(Long id, SemestreRequest request);
+
+    PageResponse<SemestreResponse> listar(
+            String q,
+            int page,
+            int size
+    );
 }
 

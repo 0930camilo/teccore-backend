@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,8 +28,29 @@ public class SemestreController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','ADMIN_SEDE')")
-    public ResponseEntity<ApiResponse<SemestreResponse>> crear(@Valid @RequestBody SemestreRequest request) {
-        return ResponseEntity.status(201).body(ApiResponseFactory.created("Semestre creado", semestreService.crear(request)));
+    public ResponseEntity<ApiResponse<SemestreResponse>> crear(
+            @Valid @RequestBody SemestreRequest request) {
+
+        return ResponseEntity.status(201).body(
+                ApiResponseFactory.created(
+                        "Semestre creado",
+                        semestreService.crear(request)
+                )
+        );
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','ADMIN_SEDE')")
+    public ResponseEntity<ApiResponse<SemestreResponse>> actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody SemestreRequest request) {
+
+        return ResponseEntity.ok(
+                ApiResponseFactory.ok(
+                        "Semestre actualizado",
+                        semestreService.actualizar(id, request)
+                )
+        );
     }
 
     @GetMapping
@@ -36,8 +59,12 @@ public class SemestreController {
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(ApiResponseFactory.ok("Listado de semestres", semestreService.listar(q, page, size)));
+
+        return ResponseEntity.ok(
+                ApiResponseFactory.ok(
+                        "Listado de semestres",
+                        semestreService.listar(q, page, size)
+                )
+        );
     }
 }
-
-
