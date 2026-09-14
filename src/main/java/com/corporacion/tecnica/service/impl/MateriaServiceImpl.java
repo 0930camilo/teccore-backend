@@ -3,12 +3,14 @@ package com.corporacion.tecnica.service.impl;
 import com.corporacion.tecnica.dto.PageResponse;
 import com.corporacion.tecnica.dto.materia.MateriaRequest;
 import com.corporacion.tecnica.dto.materia.MateriaResponse;
+import com.corporacion.tecnica.entity.Docente;
 import com.corporacion.tecnica.entity.Institucion;
 import com.corporacion.tecnica.entity.Materia;
 import com.corporacion.tecnica.entity.Semestre;
 import com.corporacion.tecnica.exception.BusinessException;
 import com.corporacion.tecnica.exception.ResourceNotFoundException;
 import com.corporacion.tecnica.mapper.MateriaMapper;
+import com.corporacion.tecnica.repository.DocenteRepository;
 import com.corporacion.tecnica.repository.MateriaRepository;
 import com.corporacion.tecnica.repository.SemestreRepository;
 import com.corporacion.tecnica.service.MateriaService;
@@ -25,6 +27,7 @@ public class MateriaServiceImpl implements MateriaService {
 
     private final MateriaRepository materiaRepository;
     private final SemestreRepository semestreRepository;
+    private final DocenteRepository docenteRepository;
     private final MateriaMapper materiaMapper;
     private final InstitutionScopeResolver institutionScopeResolver;
     private final SedeScopeResolver sedeScopeResolver;
@@ -57,6 +60,17 @@ public class MateriaServiceImpl implements MateriaService {
         materia.setSemestre(semestre);
         if (request.getEstado() != null) {
             materia.setEstado(request.getEstado());
+        }
+
+        if (request.getDocenteId() != null) {
+            Docente docente = docenteRepository.findById(request.getDocenteId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Docente no encontrado"));
+            if (docente.getInstitucion() != null && !docente.getInstitucion().getId().equals(institucion.getId())) {
+                throw new BusinessException("El docente no pertenece a la institucion");
+            }
+            materia.setDocente(docente);
+        } else {
+            materia.setDocente(null);
         }
 
         return materiaMapper.toResponse(materiaRepository.save(materia));
@@ -94,6 +108,17 @@ public class MateriaServiceImpl implements MateriaService {
         materia.setInstitucion(institucion);
         if (request.getEstado() != null) {
             materia.setEstado(request.getEstado());
+        }
+
+        if (request.getDocenteId() != null) {
+            Docente docente = docenteRepository.findById(request.getDocenteId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Docente no encontrado"));
+            if (docente.getInstitucion() != null && !docente.getInstitucion().getId().equals(institucion.getId())) {
+                throw new BusinessException("El docente no pertenece a la institucion");
+            }
+            materia.setDocente(docente);
+        } else {
+            materia.setDocente(null);
         }
 
         return materiaMapper.toResponse(materiaRepository.save(materia));

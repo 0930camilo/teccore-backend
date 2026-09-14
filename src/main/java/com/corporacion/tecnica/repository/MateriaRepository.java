@@ -13,14 +13,16 @@ public interface MateriaRepository extends JpaRepository<Materia, Long> {
             "semestre",
             "semestre.programa",
             "semestre.programa.sede",
-            "institucion"
+            "institucion",
+            "docente"
     })
     Optional<Materia> findById(Long id);
 
     @EntityGraph(attributePaths = {
             "semestre",
             "semestre.programa",
-            "institucion"
+            "institucion",
+            "docente"
     })
     Page<Materia> findByInstitucionIdAndNombreContainingIgnoreCase(
             Long institucionId,
@@ -32,7 +34,8 @@ public interface MateriaRepository extends JpaRepository<Materia, Long> {
             "semestre",
             "semestre.programa",
             "semestre.programa.sede",
-            "institucion"
+            "institucion",
+            "docente"
     })
     Page<Materia> findBySemestreProgramaSedeIdAndNombreContainingIgnoreCase(
             Long sedeId,

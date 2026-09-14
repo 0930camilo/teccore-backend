@@ -23,5 +23,9 @@ public class Materia extends BaseInstitutionEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "semestre_id", nullable = false)
     private Semestre semestre;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "docente_id")
+    private Docente docente;
 }
 

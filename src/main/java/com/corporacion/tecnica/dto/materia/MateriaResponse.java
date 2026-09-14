@@ -17,5 +17,7 @@ public class MateriaResponse {
     private String programaNombre;
     private Long institucionId;
     private String institucionNombre;
+    private Long docenteId;
+    private String docenteNombre;
 }
 

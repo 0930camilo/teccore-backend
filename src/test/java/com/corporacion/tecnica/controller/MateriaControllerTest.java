@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.corporacion.tecnica.entity.Docente;
 import com.corporacion.tecnica.entity.Institucion;
 import com.corporacion.tecnica.entity.Materia;
 import com.corporacion.tecnica.entity.Programa;
@@ -17,6 +18,7 @@ import com.corporacion.tecnica.entity.RolNombre;
 import com.corporacion.tecnica.entity.Sede;
 import com.corporacion.tecnica.entity.Semestre;
 import com.corporacion.tecnica.entity.Usuario;
+import com.corporacion.tecnica.repository.DocenteRepository;
 import com.corporacion.tecnica.repository.InstitucionRepository;
 import com.corporacion.tecnica.repository.MateriaRepository;
 import com.corporacion.tecnica.repository.ProgramaRepository;
@@ -57,6 +59,8 @@ class MateriaControllerTest {
     private SedeRepository sedeRepository;
     @Autowired
     private UsuarioRepository usuarioRepository;
+    @Autowired
+    private DocenteRepository docenteRepository;
 
     private Institucion institucion;
     private Sede sede1;
@@ -67,6 +71,7 @@ class MateriaControllerTest {
     private Semestre semestreSede2;
     private Materia materiaSede1;
     private Materia materiaSede2;
+    private Docente docente1;
 
     @BeforeEach
     void setUp() {
@@ -89,8 +94,10 @@ class MateriaControllerTest {
         semestreSede1 = createSemestre("Semestre 1 - Software", 1, programaSede1, institucion);
         semestreSede2 = createSemestre("Semestre 1 - Admin", 1, programaSede2, institucion);
 
-        materiaSede1 = createMateria("Programacion I", 64, semestreSede1, institucion);
-        materiaSede2 = createMateria("Contabilidad Basica", 48, semestreSede2, institucion);
+        docente1 = createDocente("Juan", "Perez", "12345678", institucion);
+
+        materiaSede1 = createMateria("Programacion I", 64, semestreSede1, institucion, docente1);
+        materiaSede2 = createMateria("Contabilidad Basica", 48, semestreSede2, institucion, null);
     }
 
     @AfterEach
@@ -110,7 +117,9 @@ class MateriaControllerTest {
                 .andExpect(jsonPath("$.data.content[0].nombre").value("Programacion I"))
                 .andExpect(jsonPath("$.data.content[0].semestreId").value(semestreSede1.getId()))
                 .andExpect(jsonPath("$.data.content[0].programaId").value(programaSede1.getId()))
-                .andExpect(jsonPath("$.data.content[0].institucionId").value(institucion.getId()));
+                .andExpect(jsonPath("$.data.content[0].institucionId").value(institucion.getId()))
+                .andExpect(jsonPath("$.data.content[0].docenteId").value(docente1.getId()))
+                .andExpect(jsonPath("$.data.content[0].docenteNombre").value("Juan Perez"));
     }
 
     @Test
@@ -124,7 +133,7 @@ class MateriaControllerTest {
     }
 
     @Test
-    void adminSedeDebePoderCrearMateriaEnSuSede() throws Exception {
+    void adminSedeDebePoderCrearMateriaEnSuSedeConDocente() throws Exception {
         mockMvc.perform(post("/materias")
                         .with(user("admin.sede1@test.com").roles("ADMIN_SEDE"))
                         .header("X-Institucion-Id", institucion.getId())
@@ -134,16 +143,19 @@ class MateriaControllerTest {
                                 {
                                   "nombre": "Bases de Datos I",
                                   "intensidadHoraria": 48,
-                                  "semestreId": %d
+                                  "semestreId": %d,
+                                  "docenteId": %d
                                 }
-                                """.formatted(semestreSede1.getId())))
+                                """.formatted(semestreSede1.getId(), docente1.getId())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message").value("Materia creada"))
                 .andExpect(jsonPath("$.data.nombre").value("Bases de Datos I"))
                 .andExpect(jsonPath("$.data.intensidadHoraria").value(48))
                 .andExpect(jsonPath("$.data.semestreId").value(semestreSede1.getId()))
                 .andExpect(jsonPath("$.data.programaId").value(programaSede1.getId()))
-                .andExpect(jsonPath("$.data.institucionId").value(institucion.getId()));
+                .andExpect(jsonPath("$.data.institucionId").value(institucion.getId()))
+                .andExpect(jsonPath("$.data.docenteId").value(docente1.getId()))
+                .andExpect(jsonPath("$.data.docenteNombre").value("Juan Perez"));
     }
 
     @Test
@@ -157,7 +169,9 @@ class MateriaControllerTest {
                 .andExpect(jsonPath("$.data.id").value(materiaSede1.getId()))
                 .andExpect(jsonPath("$.data.nombre").value("Programacion I"))
                 .andExpect(jsonPath("$.data.semestreId").value(semestreSede1.getId()))
-                .andExpect(jsonPath("$.data.programaId").value(programaSede1.getId()));
+                .andExpect(jsonPath("$.data.programaId").value(programaSede1.getId()))
+                .andExpect(jsonPath("$.data.docenteId").value(docente1.getId()))
+                .andExpect(jsonPath("$.data.docenteNombre").value("Juan Perez"));
     }
 
     @Test
@@ -180,13 +194,16 @@ class MateriaControllerTest {
                                 {
                                   "nombre": "Programacion Avanzada I",
                                   "intensidadHoraria": 80,
-                                  "semestreId": %d
+                                  "semestreId": %d,
+                                  "docenteId": %d
                                 }
-                                """.formatted(semestreSede1.getId())))
+                                """.formatted(semestreSede1.getId(), docente1.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Materia actualizada"))
                 .andExpect(jsonPath("$.data.nombre").value("Programacion Avanzada I"))
-                .andExpect(jsonPath("$.data.intensidadHoraria").value(80));
+                .andExpect(jsonPath("$.data.intensidadHoraria").value(80))
+                .andExpect(jsonPath("$.data.docenteId").value(docente1.getId()))
+                .andExpect(jsonPath("$.data.docenteNombre").value("Juan Perez"));
     }
 
     @Test
@@ -258,12 +275,24 @@ class MateriaControllerTest {
         return semestreRepository.save(sem);
     }
 
-    private Materia createMateria(String nombre, int intensidad, Semestre sem, Institucion inst) {
+    private Docente createDocente(String nombres, String apellidos, String documento, Institucion inst) {
+        Docente d = new Docente();
+        d.setNombres(nombres);
+        d.setApellidos(apellidos);
+        d.setDocumento(documento);
+        d.setCorreo("docente@test.com");
+        d.setCargaHorariaSemanal(20);
+        d.setInstitucion(inst);
+        return docenteRepository.save(d);
+    }
+
+    private Materia createMateria(String nombre, int intensidad, Semestre sem, Institucion inst, Docente docente) {
         Materia mat = new Materia();
         mat.setNombre(nombre);
         mat.setIntensidadHoraria(intensidad);
         mat.setSemestre(sem);
         mat.setInstitucion(inst);
+        mat.setDocente(docente);
         return materiaRepository.save(mat);
     }
 }

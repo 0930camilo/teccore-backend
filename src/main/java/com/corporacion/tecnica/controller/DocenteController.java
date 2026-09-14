@@ -10,12 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/docentes")
@@ -25,18 +20,74 @@ public class DocenteController {
     private final DocenteService docenteService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN_INSTITUCION')")
-    public ResponseEntity<ApiResponse<DocenteResponse>> crear(@Valid @RequestBody DocenteRequest request) {
-        return ResponseEntity.status(201).body(ApiResponseFactory.created("Docente creado", docenteService.crear(request)));
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION', 'ADMIN_SEDE')")
+    public ResponseEntity<ApiResponse<DocenteResponse>> crear(
+            @Valid @RequestBody DocenteRequest request) {
+
+        return ResponseEntity
+                .status(201)
+                .body(
+                        ApiResponseFactory.created(
+                                "Docente creado",
+                                docenteService.crear(request)
+                        )
+                );
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN_INSTITUCION')")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION', 'ADMIN_SEDE')")
     public ResponseEntity<ApiResponse<PageResponse<DocenteResponse>>> listar(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(ApiResponseFactory.ok("Listado de docentes", docenteService.listar(q, page, size)));
+
+        return ResponseEntity.ok(
+                ApiResponseFactory.ok(
+                        "Listado de docentes",
+                        docenteService.listar(q, page, size)
+                )
+        );
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION', 'ADMIN_SEDE')")
+    public ResponseEntity<ApiResponse<DocenteResponse>> obtener(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                ApiResponseFactory.ok(
+                        "Docente encontrado",
+                        docenteService.obtener(id)
+                )
+        );
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION', 'ADMIN_SEDE')")
+    public ResponseEntity<ApiResponse<DocenteResponse>> actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody DocenteRequest request) {
+
+        return ResponseEntity.ok(
+                ApiResponseFactory.ok(
+                        "Docente actualizado",
+                        docenteService.actualizar(id, request)
+                )
+        );
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION', 'ADMIN_SEDE')")
+    public ResponseEntity<ApiResponse<Void>> eliminar(
+            @PathVariable Long id) {
+
+        docenteService.eliminar(id);
+
+        return ResponseEntity.ok(
+                ApiResponseFactory.ok(
+                        "Docente eliminado",
+                        null
+                )
+        );
     }
 }
-

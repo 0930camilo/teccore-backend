@@ -22,6 +22,8 @@ public class MateriaRequest {
 
     private Long sedeId;
 
+    private Long docenteId;
+
     private EstadoRegistro estado;
 }
 

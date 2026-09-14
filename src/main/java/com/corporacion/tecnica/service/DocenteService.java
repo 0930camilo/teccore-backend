@@ -5,6 +5,14 @@ import com.corporacion.tecnica.dto.docente.DocenteRequest;
 import com.corporacion.tecnica.dto.docente.DocenteResponse;
 
 public interface DocenteService {
+
     DocenteResponse crear(DocenteRequest request);
+
     PageResponse<DocenteResponse> listar(String q, int page, int size);
+
+    DocenteResponse obtener(Long id);
+
+    DocenteResponse actualizar(Long id, DocenteRequest request);
+
+    void eliminar(Long id);
 }
