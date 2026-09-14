@@ -37,5 +37,27 @@ public class DataInitializer {
             }
         };
     }
+
+    @Bean
+    CommandLineRunner fixSemestreIndex() {
+        return args -> {
+            try {
+                Integer count = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'semestres' AND index_name = 'uk_semestre_programa_numero'",
+                        Integer.class
+                );
+
+                if (count != null && count > 0) {
+                    log.info("Índice único antiguo encontrado en 'semestres' (uk_semestre_programa_numero'). Intentando eliminar...");
+                    jdbcTemplate.execute("ALTER TABLE semestres DROP INDEX uk_semestre_programa_numero");
+                    log.info("Índice 'uk_semestre_programa_numero' eliminado correctamente.");
+                } else {
+                    log.debug("Índice 'uk_semestre_programa_numero' no existe, no es necesario eliminarlo.");
+                }
+            } catch (Exception e) {
+                log.warn("No se pudo eliminar el índice antiguo de 'semestres' automáticamente: {}", e.getMessage());
+            }
+        };
+    }
 }
 

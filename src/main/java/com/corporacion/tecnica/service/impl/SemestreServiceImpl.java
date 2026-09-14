@@ -101,6 +101,8 @@ public class SemestreServiceImpl implements SemestreService {
     @Transactional(readOnly = true)
     public PageResponse<SemestreResponse> listar(
             String q,
+            Integer programaId,
+            Integer anio,
             int page,
             int size) {
 
@@ -117,8 +119,10 @@ public class SemestreServiceImpl implements SemestreService {
         if (sedeId != null) {
 
             result = semestreRepository
-                    .findByProgramaSedeIdAndNombreContainingIgnoreCase(
+                    .searchBySedeAndFilters(
                             sedeId,
+                            programaId == null ? null : programaId.longValue(),
+                            anio,
                             nombre,
                             pageable
                     )
@@ -130,8 +134,10 @@ public class SemestreServiceImpl implements SemestreService {
                     institutionScopeResolver.resolveInstitutionId(null);
 
             result = semestreRepository
-                    .findByInstitucionIdAndNombreContainingIgnoreCase(
+                    .searchByInstitucionAndFilters(
                             institucionId,
+                            programaId == null ? null : programaId.longValue(),
+                            anio,
                             nombre,
                             pageable
                     )

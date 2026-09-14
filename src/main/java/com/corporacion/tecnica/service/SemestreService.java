@@ -12,6 +12,8 @@ public interface SemestreService {
 
     PageResponse<SemestreResponse> listar(
             String q,
+            Integer programaId,
+            Integer anio,
             int page,
             int size
     );

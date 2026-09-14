@@ -57,13 +57,15 @@ public class SemestreController {
     @PreAuthorize("hasAnyRole('ADMIN_INSTITUCION','ADMIN_SEDE','DOCENTE')")
     public ResponseEntity<ApiResponse<PageResponse<SemestreResponse>>> listar(
             @RequestParam(required = false) String q,
+            @RequestParam(required = false) Long programaId,
+            @RequestParam(required = false) Integer anio,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(
                 ApiResponseFactory.ok(
                         "Listado de semestres",
-                        semestreService.listar(q, page, size)
+                        semestreService.listar(q, programaId == null ? null : Math.toIntExact(programaId), anio, page, size)
                 )
         );
     }

@@ -14,7 +14,9 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "semestres", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_semestre_programa_numero", columnNames = {"programa_id", "numero"})
+        // Hacemos la restricción única por (programa_id, numero, anio)
+        // para permitir el mismo número de semestre en años distintos
+        @UniqueConstraint(name = "uk_semestre_programa_numero_anio", columnNames = {"programa_id", "numero", "anio"})
 })
 public class Semestre extends BaseInstitutionEntity {
 
