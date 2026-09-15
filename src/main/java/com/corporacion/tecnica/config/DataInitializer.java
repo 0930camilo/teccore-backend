@@ -59,5 +59,43 @@ public class DataInitializer {
             }
         };
     }
+
+    @Bean
+    CommandLineRunner initAlumnoMateriaRelation() {
+        return args -> {
+            try {
+                jdbcTemplate.execute("""
+                        CREATE TABLE IF NOT EXISTS alumnos_materias (
+                            alumno_id BIGINT NOT NULL,
+                            materia_id BIGINT NOT NULL,
+                            PRIMARY KEY (alumno_id, materia_id)
+                        )
+                        """);
+                log.info("Tabla 'alumnos_materias' verificada correctamente.");
+            } catch (Exception e) {
+                log.warn("No se pudo crear/verificar la tabla 'alumnos_materias': {}", e.getMessage());
+            }
+
+            try {
+                jdbcTemplate.execute("""
+                        ALTER TABLE alumnos_materias
+                        ADD CONSTRAINT fk_alumnos_materias_alumno
+                        FOREIGN KEY (alumno_id) REFERENCES alumnos(id)
+                        """);
+            } catch (Exception e) {
+                log.debug("No se pudo crear FK alumnos_materias.alumno_id (puede existir o no ser necesario): {}", e.getMessage());
+            }
+
+            try {
+                jdbcTemplate.execute("""
+                        ALTER TABLE alumnos_materias
+                        ADD CONSTRAINT fk_alumnos_materias_materia
+                        FOREIGN KEY (materia_id) REFERENCES materias(id)
+                        """);
+            } catch (Exception e) {
+                log.debug("No se pudo crear FK alumnos_materias.materia_id (puede existir o no ser necesario): {}", e.getMessage());
+            }
+        };
+    }
 }
 

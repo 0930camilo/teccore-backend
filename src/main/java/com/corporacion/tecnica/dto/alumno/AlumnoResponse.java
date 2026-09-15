@@ -1,5 +1,6 @@
 package com.corporacion.tecnica.dto.alumno;
 
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,5 +14,5 @@ public class AlumnoResponse {
     private String correo;
     private String telefono;
     private Long institucionId;
+    private List<Long> materiaIds;
 }
-

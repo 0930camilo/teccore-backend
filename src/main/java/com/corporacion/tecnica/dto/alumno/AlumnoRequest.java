@@ -1,7 +1,7 @@
 package com.corporacion.tecnica.dto.alumno;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,6 +22,7 @@ public class AlumnoRequest {
 
     private String telefono;
 
-    @NotNull
     private Long institucionId;
+
+    private List<Long> materiaIds;
 }
