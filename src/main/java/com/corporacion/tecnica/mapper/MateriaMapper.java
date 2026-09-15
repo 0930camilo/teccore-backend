@@ -13,6 +13,8 @@ public interface MateriaMapper {
 
     @Mapping(target = "semestre", ignore = true)
     @Mapping(target = "docente", ignore = true)
+    @Mapping(target = "horaInicio", ignore = true)
+    @Mapping(target = "horaFin", ignore = true)
     Materia toEntity(MateriaRequest request);
 
     @Mapping(target = "semestreId", source = "semestre.id")
@@ -22,7 +24,11 @@ public interface MateriaMapper {
     @Mapping(target = "institucionId", source = "institucion.id")
     @Mapping(target = "institucionNombre", source = "institucion.nombre")
     @Mapping(target = "docenteId", source = "docente.id")
-    @Mapping(target = "docenteNombre", source = "docente", qualifiedByName = "mapDocenteNombre")
+    @Mapping(
+            target = "docenteNombre",
+            source = "docente",
+            qualifiedByName = "mapDocenteNombre"
+    )
     MateriaResponse toResponse(Materia materia);
 
     @Named("mapDocenteNombre")
@@ -30,10 +36,17 @@ public interface MateriaMapper {
         if (docente == null) {
             return null;
         }
-        String nombres = docente.getNombres() != null ? docente.getNombres().trim() : "";
-        String apellidos = docente.getApellidos() != null ? docente.getApellidos().trim() : "";
+
+        String nombres = docente.getNombres() != null
+                ? docente.getNombres().trim()
+                : "";
+
+        String apellidos = docente.getApellidos() != null
+                ? docente.getApellidos().trim()
+                : "";
+
         String nombreCompleto = (nombres + " " + apellidos).trim();
+
         return nombreCompleto.isEmpty() ? null : nombreCompleto;
     }
 }
-

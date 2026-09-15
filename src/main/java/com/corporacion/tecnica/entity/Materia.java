@@ -2,11 +2,14 @@ package com.corporacion.tecnica.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.Getter;
@@ -23,6 +26,16 @@ public class Materia extends BaseInstitutionEntity {
 
     private Integer intensidadHoraria;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "dia_semana", nullable = false)
+    private DiaSemana diaSemana;
+
+    @Column(name = "hora_inicio", nullable = false)
+    private LocalTime horaInicio;
+
+    @Column(name = "hora_fin", nullable = false)
+    private LocalTime horaFin;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "semestre_id", nullable = false)
     private Semestre semestre;
@@ -34,4 +47,3 @@ public class Materia extends BaseInstitutionEntity {
     @ManyToMany(mappedBy = "materias")
     private Set<Alumno> alumnos = new HashSet<>();
 }
-

@@ -53,19 +53,36 @@ public class AlumnoServiceImpl implements AlumnoService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<AlumnoResponse> listar(String q, int page, int size) {
-        String query = q == null ? "" : q;
+        String query = q == null ? "" : q.trim();
+
         Page<AlumnoResponse> result;
+
         Long sedeId = sedeScopeResolver.getCurrentSedeScope();
+
         if (sedeId != null) {
             result = alumnoRepository
-                    .findBySedeIdAndNombresContainingIgnoreCase(sedeId, query, PageRequest.of(page, size))
+                    .findBySedeIdAndNombresContainingIgnoreCaseOrSedeIdAndDocumentoContainingIgnoreCase(
+                            sedeId,
+                            query,
+                            sedeId,
+                            query,
+                            PageRequest.of(page, size)
+                    )
                     .map(alumnoMapper::toResponse);
         } else {
             Long institucionId = institutionScopeResolver.resolveInstitutionId(null);
+
             result = alumnoRepository
-                    .findByInstitucionIdAndNombresContainingIgnoreCase(institucionId, query, PageRequest.of(page, size))
+                    .findByInstitucionIdAndNombresContainingIgnoreCaseOrInstitucionIdAndDocumentoContainingIgnoreCase(
+                            institucionId,
+                            query,
+                            institucionId,
+                            query,
+                            PageRequest.of(page, size)
+                    )
                     .map(alumnoMapper::toResponse);
         }
+
         return ApiResponseFactory.page(result);
     }
 
