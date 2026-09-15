@@ -42,7 +42,6 @@ public class DocenteServiceImpl implements DocenteService {
                 docenteRepository.save(docente)
         );
     }
-
     @Override
     @Transactional(readOnly = true)
     public PageResponse<DocenteResponse> listar(
@@ -53,20 +52,19 @@ public class DocenteServiceImpl implements DocenteService {
         Long institucionId =
                 institutionScopeResolver.resolveInstitutionId(null);
 
-        String nombre = q == null ? "" : q.trim();
+        String filtro = q == null ? "" : q.trim();
 
         Page<DocenteResponse> result =
                 docenteRepository
-                        .findByInstitucionIdAndNombresContainingIgnoreCase(
+                        .buscarPorNombreODocumento(
                                 institucionId,
-                                nombre,
+                                filtro,
                                 PageRequest.of(page, size)
                         )
                         .map(docenteMapper::toResponse);
 
         return ApiResponseFactory.page(result);
     }
-
     @Override
     @Transactional(readOnly = true)
     public DocenteResponse obtener(Long id) {
