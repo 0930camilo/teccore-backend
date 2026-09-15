@@ -15,5 +15,6 @@ public class AlumnoResponse {
     private String telefono;
     private Long institucionId;
     private Long sedeId;
+    private Long semestreId;
     private List<Long> materiaIds;
 }

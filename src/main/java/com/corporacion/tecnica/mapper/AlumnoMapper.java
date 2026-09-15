@@ -17,6 +17,7 @@ public interface AlumnoMapper {
 
     @Mapping(target = "institucionId", source = "institucion.id")
     @Mapping(target = "sedeId", source = "sede.id")
+    @Mapping(target = "semestreId", source = "semestre.id")
     @Mapping(target = "materiaIds", expression = "java(toMateriaIds(alumno))")
     AlumnoResponse toResponse(Alumno alumno);
 

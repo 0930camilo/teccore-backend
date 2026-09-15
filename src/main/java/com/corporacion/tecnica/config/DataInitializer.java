@@ -77,6 +77,19 @@ public class DataInitializer {
             }
 
             try {
+                Integer semestreColumnCount = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'alumnos' AND column_name = 'semestre_id'",
+                        Integer.class
+                );
+                if (semestreColumnCount != null && semestreColumnCount == 0) {
+                    jdbcTemplate.execute("ALTER TABLE alumnos ADD COLUMN semestre_id BIGINT");
+                    log.info("Columna 'alumnos.semestre_id' creada correctamente.");
+                }
+            } catch (Exception e) {
+                log.debug("No se pudo crear/verificar la columna 'alumnos.semestre_id' automaticamente: {}", e.getMessage());
+            }
+
+            try {
                 jdbcTemplate.execute("""
                         ALTER TABLE alumnos
                         ADD CONSTRAINT fk_alumnos_sede
@@ -84,6 +97,16 @@ public class DataInitializer {
                         """);
             } catch (Exception e) {
                 log.debug("No se pudo crear FK alumnos.sede_id (puede existir o no ser necesario): {}", e.getMessage());
+            }
+
+            try {
+                jdbcTemplate.execute("""
+                        ALTER TABLE alumnos
+                        ADD CONSTRAINT fk_alumnos_semestre
+                        FOREIGN KEY (semestre_id) REFERENCES semestres(id)
+                        """);
+            } catch (Exception e) {
+                log.debug("No se pudo crear FK alumnos.semestre_id (puede existir o no ser necesario): {}", e.getMessage());
             }
 
             try {

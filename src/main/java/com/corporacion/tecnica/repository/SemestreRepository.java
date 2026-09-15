@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 public interface SemestreRepository extends JpaRepository<Semestre, Long> {
 
+    boolean existsByProgramaIdAndNumeroAndAnio(Long programaId, Integer numero, Integer anio);
+
     @EntityGraph(attributePaths = {
             "programa",
             "institucion"

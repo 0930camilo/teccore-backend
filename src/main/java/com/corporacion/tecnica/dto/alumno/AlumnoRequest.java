@@ -26,5 +26,7 @@ public class AlumnoRequest {
 
     private Long sedeId;
 
+    private Long semestreId;
+
     private List<Long> materiaIds;
 }

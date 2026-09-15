@@ -7,11 +7,13 @@ import com.corporacion.tecnica.entity.Alumno;
 import com.corporacion.tecnica.entity.Institucion;
 import com.corporacion.tecnica.entity.Materia;
 import com.corporacion.tecnica.entity.Sede;
+import com.corporacion.tecnica.entity.Semestre;
 import com.corporacion.tecnica.exception.BusinessException;
 import com.corporacion.tecnica.exception.ResourceNotFoundException;
 import com.corporacion.tecnica.mapper.AlumnoMapper;
 import com.corporacion.tecnica.repository.AlumnoRepository;
 import com.corporacion.tecnica.repository.MateriaRepository;
+import com.corporacion.tecnica.repository.SemestreRepository;
 import com.corporacion.tecnica.service.AlumnoService;
 import com.corporacion.tecnica.util.ApiResponseFactory;
 import java.util.HashSet;
@@ -29,6 +31,7 @@ public class AlumnoServiceImpl implements AlumnoService {
 
     private final AlumnoRepository alumnoRepository;
     private final MateriaRepository materiaRepository;
+    private final SemestreRepository semestreRepository;
     private final AlumnoMapper alumnoMapper;
     private final InstitutionScopeResolver institutionScopeResolver;
     private final SedeScopeResolver sedeScopeResolver;
@@ -39,9 +42,11 @@ public class AlumnoServiceImpl implements AlumnoService {
         Alumno alumno = alumnoMapper.toEntity(request);
         Sede sede = sedeScopeResolver.getRequiredSede(normalizeId(request.getSedeId()));
         Institucion institucion = sede.getInstitucion();
+        Semestre semestre = resolveSemestre(request.getSemestreId(), institucion.getId(), sede.getId());
         alumno.setInstitucion(institucion);
         alumno.setSede(sede);
-        alumno.setMaterias(resolveMaterias(request.getMateriaIds(), institucion.getId(), sede.getId()));
+        alumno.setSemestre(semestre);
+        alumno.setMaterias(resolveMaterias(request.getMateriaIds(), semestre, institucion.getId(), sede.getId()));
         return alumnoMapper.toResponse(alumnoRepository.save(alumno));
     }
 
@@ -68,12 +73,35 @@ public class AlumnoServiceImpl implements AlumnoService {
         return id != null && id == 0 ? null : id;
     }
 
-    private Set<Materia> resolveMaterias(List<Long> materiaIds, Long institucionId, Long sedeId) {
-        if (materiaIds == null || materiaIds.isEmpty()) {
-            return new HashSet<>();
+    private Semestre resolveSemestre(Long semestreId, Long institucionId, Long sedeId) {
+        Long normalizedSemestreId = normalizeId(semestreId);
+        if (normalizedSemestreId == null) {
+            return null;
         }
 
+        Semestre semestre = semestreRepository.findById(normalizedSemestreId)
+                .orElseThrow(() -> new ResourceNotFoundException("Semestre no encontrado"));
+        if (semestre.getInstitucion() == null || !institucionId.equals(semestre.getInstitucion().getId())) {
+            throw new BusinessException("El semestre no pertenece a la institucion del alumno");
+        }
+        if (semestre.getPrograma() == null
+                || semestre.getPrograma().getSede() == null
+                || !sedeId.equals(semestre.getPrograma().getSede().getId())) {
+            throw new BusinessException("El semestre no pertenece a la sede del alumno");
+        }
+        return semestre;
+    }
+
+    private Set<Materia> resolveMaterias(List<Long> materiaIds, Semestre semestre, Long institucionId, Long sedeId) {
         Set<Materia> materias = new HashSet<>();
+        if (semestre != null) {
+            materias.addAll(materiaRepository.findBySemestreId(semestre.getId()));
+        }
+
+        if (materiaIds == null || materiaIds.isEmpty()) {
+            return materias;
+        }
+
         for (Long materiaId : materiaIds) {
             Materia materia = materiaRepository.findById(materiaId)
                     .orElseThrow(() -> new ResourceNotFoundException("Materia no encontrada"));

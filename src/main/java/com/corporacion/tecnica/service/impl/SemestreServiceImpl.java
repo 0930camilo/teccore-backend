@@ -40,11 +40,32 @@ public class SemestreServiceImpl implements SemestreService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Programa no encontrado"));
 
-        Long institucionId = request.getInstitucionId() != null
-                ? request.getInstitucionId()
-                : (programa.getInstitucion() != null
-                ? programa.getInstitucion().getId()
-                : null);
+        if (programa.getInstitucion() == null) {
+            throw new BusinessException("El programa no tiene institucion asociada");
+        }
+
+        if (programa.getSede() == null) {
+            throw new BusinessException("El programa no tiene sede asociada");
+        }
+
+        if (request.getSedeId() != null && request.getSedeId() != 0
+                && !request.getSedeId().equals(programa.getSede().getId())) {
+            throw new BusinessException("La sede enviada no coincide con la sede del programa");
+        }
+
+        if (request.getInstitucionId() != null && request.getInstitucionId() != 0
+                && !request.getInstitucionId().equals(programa.getInstitucion().getId())) {
+            throw new BusinessException("La institucion enviada no coincide con la institucion del programa");
+        }
+
+        if (semestreRepository.existsByProgramaIdAndNumeroAndAnio(
+                programa.getId(),
+                request.getNumero(),
+                request.getAnio())) {
+            throw new BusinessException("Ya existe un semestre con ese numero y anio para el programa");
+        }
+
+        Long institucionId = programa.getInstitucion().getId();
 
         Institucion institucion =
                 institutionScopeResolver.getRequiredInstitution(institucionId);

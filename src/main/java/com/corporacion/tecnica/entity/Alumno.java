@@ -35,6 +35,10 @@ public class Alumno extends BaseInstitutionEntity {
     @JoinColumn(name = "sede_id")
     private Sede sede;
 
+    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
+    @JoinColumn(name = "semestre_id")
+    private Semestre semestre;
+
     @ManyToMany
     @JoinTable(
             name = "alumnos_materias",

@@ -1,6 +1,7 @@
 package com.corporacion.tecnica.repository;
 
 import com.corporacion.tecnica.entity.Materia;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,4 +43,13 @@ public interface MateriaRepository extends JpaRepository<Materia, Long> {
             String nombre,
             Pageable pageable
     );
+
+    @EntityGraph(attributePaths = {
+            "semestre",
+            "semestre.programa",
+            "semestre.programa.sede",
+            "institucion",
+            "docente"
+    })
+    List<Materia> findBySemestreId(Long semestreId);
 }
