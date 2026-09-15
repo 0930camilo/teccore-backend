@@ -6,6 +6,7 @@ import com.corporacion.tecnica.dto.alumno.AlumnoResponse;
 import com.corporacion.tecnica.entity.Alumno;
 import com.corporacion.tecnica.entity.Institucion;
 import com.corporacion.tecnica.entity.Materia;
+import com.corporacion.tecnica.entity.Sede;
 import com.corporacion.tecnica.exception.BusinessException;
 import com.corporacion.tecnica.exception.ResourceNotFoundException;
 import com.corporacion.tecnica.mapper.AlumnoMapper;
@@ -30,32 +31,44 @@ public class AlumnoServiceImpl implements AlumnoService {
     private final MateriaRepository materiaRepository;
     private final AlumnoMapper alumnoMapper;
     private final InstitutionScopeResolver institutionScopeResolver;
+    private final SedeScopeResolver sedeScopeResolver;
 
     @Override
     @Transactional
     public AlumnoResponse crear(AlumnoRequest request) {
         Alumno alumno = alumnoMapper.toEntity(request);
-        Institucion institucion = institutionScopeResolver.getRequiredInstitution(normalizeInstitutionId(request.getInstitucionId()));
+        Sede sede = sedeScopeResolver.getRequiredSede(normalizeId(request.getSedeId()));
+        Institucion institucion = sede.getInstitucion();
         alumno.setInstitucion(institucion);
-        alumno.setMaterias(resolveMaterias(request.getMateriaIds(), institucion.getId()));
+        alumno.setSede(sede);
+        alumno.setMaterias(resolveMaterias(request.getMateriaIds(), institucion.getId(), sede.getId()));
         return alumnoMapper.toResponse(alumnoRepository.save(alumno));
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<AlumnoResponse> listar(String q, int page, int size) {
-        Long institucionId = institutionScopeResolver.resolveInstitutionId(null);
-        Page<AlumnoResponse> result = alumnoRepository
-                .findByInstitucionIdAndNombresContainingIgnoreCase(institucionId, q == null ? "" : q, PageRequest.of(page, size))
-                .map(alumnoMapper::toResponse);
+        String query = q == null ? "" : q;
+        Page<AlumnoResponse> result;
+        Long sedeId = sedeScopeResolver.getCurrentSedeScope();
+        if (sedeId != null) {
+            result = alumnoRepository
+                    .findBySedeIdAndNombresContainingIgnoreCase(sedeId, query, PageRequest.of(page, size))
+                    .map(alumnoMapper::toResponse);
+        } else {
+            Long institucionId = institutionScopeResolver.resolveInstitutionId(null);
+            result = alumnoRepository
+                    .findByInstitucionIdAndNombresContainingIgnoreCase(institucionId, query, PageRequest.of(page, size))
+                    .map(alumnoMapper::toResponse);
+        }
         return ApiResponseFactory.page(result);
     }
 
-    private Long normalizeInstitutionId(Long institucionId) {
-        return institucionId != null && institucionId == 0 ? null : institucionId;
+    private Long normalizeId(Long id) {
+        return id != null && id == 0 ? null : id;
     }
 
-    private Set<Materia> resolveMaterias(List<Long> materiaIds, Long institucionId) {
+    private Set<Materia> resolveMaterias(List<Long> materiaIds, Long institucionId, Long sedeId) {
         if (materiaIds == null || materiaIds.isEmpty()) {
             return new HashSet<>();
         }
@@ -66,6 +79,12 @@ public class AlumnoServiceImpl implements AlumnoService {
                     .orElseThrow(() -> new ResourceNotFoundException("Materia no encontrada"));
             if (materia.getInstitucion() == null || !institucionId.equals(materia.getInstitucion().getId())) {
                 throw new BusinessException("La materia no pertenece a la institucion del alumno");
+            }
+            if (materia.getSemestre() == null
+                    || materia.getSemestre().getPrograma() == null
+                    || materia.getSemestre().getPrograma().getSede() == null
+                    || !sedeId.equals(materia.getSemestre().getPrograma().getSede().getId())) {
+                throw new BusinessException("La materia no pertenece a la sede del alumno");
             }
             materias.add(materia);
         }

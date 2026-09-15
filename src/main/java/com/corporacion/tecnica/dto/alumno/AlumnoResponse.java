@@ -14,5 +14,6 @@ public class AlumnoResponse {
     private String correo;
     private String telefono;
     private Long institucionId;
+    private Long sedeId;
     private List<Long> materiaIds;
 }

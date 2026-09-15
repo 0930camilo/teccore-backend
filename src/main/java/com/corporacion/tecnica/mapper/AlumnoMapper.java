@@ -16,6 +16,7 @@ public interface AlumnoMapper {
     Alumno toEntity(AlumnoRequest request);
 
     @Mapping(target = "institucionId", source = "institucion.id")
+    @Mapping(target = "sedeId", source = "sede.id")
     @Mapping(target = "materiaIds", expression = "java(toMateriaIds(alumno))")
     AlumnoResponse toResponse(Alumno alumno);
 

@@ -64,6 +64,29 @@ public class DataInitializer {
     CommandLineRunner initAlumnoMateriaRelation() {
         return args -> {
             try {
+                Integer sedeColumnCount = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'alumnos' AND column_name = 'sede_id'",
+                        Integer.class
+                );
+                if (sedeColumnCount != null && sedeColumnCount == 0) {
+                    jdbcTemplate.execute("ALTER TABLE alumnos ADD COLUMN sede_id BIGINT");
+                    log.info("Columna 'alumnos.sede_id' creada correctamente.");
+                }
+            } catch (Exception e) {
+                log.debug("No se pudo crear/verificar la columna 'alumnos.sede_id' automaticamente: {}", e.getMessage());
+            }
+
+            try {
+                jdbcTemplate.execute("""
+                        ALTER TABLE alumnos
+                        ADD CONSTRAINT fk_alumnos_sede
+                        FOREIGN KEY (sede_id) REFERENCES sedes(id)
+                        """);
+            } catch (Exception e) {
+                log.debug("No se pudo crear FK alumnos.sede_id (puede existir o no ser necesario): {}", e.getMessage());
+            }
+
+            try {
                 jdbcTemplate.execute("""
                         CREATE TABLE IF NOT EXISTS alumnos_materias (
                             alumno_id BIGINT NOT NULL,

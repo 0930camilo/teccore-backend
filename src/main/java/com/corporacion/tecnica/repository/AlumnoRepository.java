@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AlumnoRepository extends JpaRepository<Alumno, Long> {
     Page<Alumno> findByInstitucionIdAndNombresContainingIgnoreCase(Long institucionId, String nombres, Pageable pageable);
+    Page<Alumno> findBySedeIdAndNombresContainingIgnoreCase(Long sedeId, String nombres, Pageable pageable);
 }
-
