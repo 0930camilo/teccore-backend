@@ -5,15 +5,21 @@ import com.corporacion.tecnica.dto.docente.DocenteRequest;
 import com.corporacion.tecnica.dto.docente.DocenteResponse;
 import com.corporacion.tecnica.entity.Docente;
 import com.corporacion.tecnica.entity.Institucion;
+import com.corporacion.tecnica.entity.Rol;
+import com.corporacion.tecnica.entity.RolNombre;
+import com.corporacion.tecnica.entity.Usuario;
 import com.corporacion.tecnica.exception.BusinessException;
 import com.corporacion.tecnica.exception.ResourceNotFoundException;
 import com.corporacion.tecnica.mapper.DocenteMapper;
 import com.corporacion.tecnica.repository.DocenteRepository;
+import com.corporacion.tecnica.repository.RolRepository;
+import com.corporacion.tecnica.repository.UsuarioRepository;
 import com.corporacion.tecnica.service.DocenteService;
 import com.corporacion.tecnica.util.ApiResponseFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,10 +30,23 @@ public class DocenteServiceImpl implements DocenteService {
     private final DocenteRepository docenteRepository;
     private final DocenteMapper docenteMapper;
     private final InstitutionScopeResolver institutionScopeResolver;
+    private final UsuarioRepository usuarioRepository;
+    private final RolRepository rolRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public DocenteResponse crear(DocenteRequest request) {
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new BusinessException("Debe enviar el email para crear la cuenta del docente");
+        }
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new BusinessException("Debe enviar la contraseña para crear la cuenta del docente");
+        }
+
+        usuarioRepository.findByEmail(request.getEmail().trim()).ifPresent(existing -> {
+            throw new BusinessException("Ya existe un usuario con ese email");
+        });
 
         Docente docente = docenteMapper.toEntity(request);
 
@@ -37,11 +56,23 @@ public class DocenteServiceImpl implements DocenteService {
                 );
 
         docente.setInstitucion(institucion);
+        Docente guardado = docenteRepository.save(docente);
 
-        return docenteMapper.toResponse(
-                docenteRepository.save(docente)
-        );
+        Rol rol = rolRepository.findByNombre(RolNombre.DOCENTE)
+                .orElseThrow(() -> new BusinessException("Rol DOCENTE no configurado"));
+
+        Usuario usuario = new Usuario();
+        usuario.setNombre(guardado.getNombres() + " " + guardado.getApellidos());
+        usuario.setEmail(request.getEmail().trim());
+        usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        usuario.setRol(rol);
+        usuario.setInstitucion(institucion);
+        usuario.setSede(null);
+        usuarioRepository.save(usuario);
+
+        return docenteMapper.toResponse(guardado);
     }
+
     @Override
     @Transactional(readOnly = true)
     public PageResponse<DocenteResponse> listar(
@@ -65,6 +96,7 @@ public class DocenteServiceImpl implements DocenteService {
 
         return ApiResponseFactory.page(result);
     }
+
     @Override
     @Transactional(readOnly = true)
     public DocenteResponse obtener(Long id) {

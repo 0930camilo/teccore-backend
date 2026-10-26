@@ -6,14 +6,19 @@ import com.corporacion.tecnica.dto.alumno.AlumnoResponse;
 import com.corporacion.tecnica.entity.Alumno;
 import com.corporacion.tecnica.entity.Institucion;
 import com.corporacion.tecnica.entity.Materia;
+import com.corporacion.tecnica.entity.Rol;
+import com.corporacion.tecnica.entity.RolNombre;
 import com.corporacion.tecnica.entity.Sede;
 import com.corporacion.tecnica.entity.Semestre;
+import com.corporacion.tecnica.entity.Usuario;
 import com.corporacion.tecnica.exception.BusinessException;
 import com.corporacion.tecnica.exception.ResourceNotFoundException;
 import com.corporacion.tecnica.mapper.AlumnoMapper;
 import com.corporacion.tecnica.repository.AlumnoRepository;
 import com.corporacion.tecnica.repository.MateriaRepository;
+import com.corporacion.tecnica.repository.RolRepository;
 import com.corporacion.tecnica.repository.SemestreRepository;
+import com.corporacion.tecnica.repository.UsuarioRepository;
 import com.corporacion.tecnica.service.AlumnoService;
 import com.corporacion.tecnica.util.ApiResponseFactory;
 import java.util.HashSet;
@@ -22,6 +27,7 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,10 +41,24 @@ public class AlumnoServiceImpl implements AlumnoService {
     private final AlumnoMapper alumnoMapper;
     private final InstitutionScopeResolver institutionScopeResolver;
     private final SedeScopeResolver sedeScopeResolver;
+    private final UsuarioRepository usuarioRepository;
+    private final RolRepository rolRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public AlumnoResponse crear(AlumnoRequest request) {
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new BusinessException("Debe enviar el email para crear la cuenta del alumno");
+        }
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new BusinessException("Debe enviar la contraseña para crear la cuenta del alumno");
+        }
+
+        usuarioRepository.findByEmail(request.getEmail().trim()).ifPresent(existing -> {
+            throw new BusinessException("Ya existe un usuario con ese email");
+        });
+
         Alumno alumno = alumnoMapper.toEntity(request);
         Sede sede = sedeScopeResolver.getRequiredSede(normalizeId(request.getSedeId()));
         Institucion institucion = sede.getInstitucion();
@@ -47,7 +67,21 @@ public class AlumnoServiceImpl implements AlumnoService {
         alumno.setSede(sede);
         alumno.setSemestre(semestre);
         alumno.setMaterias(resolveMaterias(request.getMateriaIds(), semestre, institucion.getId(), sede.getId()));
-        return alumnoMapper.toResponse(alumnoRepository.save(alumno));
+        Alumno guardado = alumnoRepository.save(alumno);
+
+        Rol rol = rolRepository.findByNombre(RolNombre.ESTUDIANTE)
+                .orElseThrow(() -> new BusinessException("Rol ESTUDIANTE no configurado"));
+
+        Usuario usuario = new Usuario();
+        usuario.setNombre(guardado.getNombres() + " " + guardado.getApellidos());
+        usuario.setEmail(request.getEmail().trim());
+        usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        usuario.setRol(rol);
+        usuario.setInstitucion(institucion);
+        usuario.setSede(sede);
+        usuarioRepository.save(usuario);
+
+        return alumnoMapper.toResponse(guardado);
     }
 
     @Override
