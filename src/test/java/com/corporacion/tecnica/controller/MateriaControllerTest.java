@@ -144,7 +144,10 @@ class MateriaControllerTest {
                                   "nombre": "Bases de Datos I",
                                   "intensidadHoraria": 48,
                                   "semestreId": %d,
-                                  "docenteId": %d
+                                  "docenteId": %d,
+                                  "diaSemana": "LUNES",
+                                  "horaInicio": "08:00",
+                                  "horaFin": "10:00"
                                 }
                                 """.formatted(semestreSede1.getId(), docente1.getId())))
                 .andExpect(status().isCreated())
@@ -195,7 +198,10 @@ class MateriaControllerTest {
                                   "nombre": "Programacion Avanzada I",
                                   "intensidadHoraria": 80,
                                   "semestreId": %d,
-                                  "docenteId": %d
+                                  "docenteId": %d,
+                                  "diaSemana": "MIERCOLES",
+                                  "horaInicio": "09:00",
+                                  "horaFin": "11:30"
                                 }
                                 """.formatted(semestreSede1.getId(), docente1.getId())))
                 .andExpect(status().isOk())
@@ -290,6 +296,9 @@ class MateriaControllerTest {
         Materia mat = new Materia();
         mat.setNombre(nombre);
         mat.setIntensidadHoraria(intensidad);
+        mat.setDiaSemana(com.corporacion.tecnica.entity.DiaSemana.LUNES);
+        mat.setHoraInicio(java.time.LocalTime.of(8, 0));
+        mat.setHoraFin(java.time.LocalTime.of(10, 0));
         mat.setSemestre(sem);
         mat.setInstitucion(inst);
         mat.setDocente(docente);
