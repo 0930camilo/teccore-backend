@@ -7,6 +7,7 @@ import com.corporacion.tecnica.entity.Docente;
 import com.corporacion.tecnica.entity.Institucion;
 import com.corporacion.tecnica.entity.Rol;
 import com.corporacion.tecnica.entity.RolNombre;
+import com.corporacion.tecnica.entity.Sede;
 import com.corporacion.tecnica.entity.Usuario;
 import com.corporacion.tecnica.exception.BusinessException;
 import com.corporacion.tecnica.exception.ResourceNotFoundException;
@@ -30,6 +31,7 @@ public class DocenteServiceImpl implements DocenteService {
     private final DocenteRepository docenteRepository;
     private final DocenteMapper docenteMapper;
     private final InstitutionScopeResolver institutionScopeResolver;
+    private final SedeScopeResolver sedeScopeResolver;
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
@@ -55,6 +57,14 @@ public class DocenteServiceImpl implements DocenteService {
                         request.getInstitucionId()
                 );
 
+        Sede sede = null;
+        if (request.getSedeId() != null) {
+            sede = sedeScopeResolver.getRequiredSede(request.getSedeId());
+            if (!sede.getInstitucion().getId().equals(institucion.getId())) {
+                throw new BusinessException("La sede no pertenece a la institución del docente");
+            }
+        }
+
         docente.setInstitucion(institucion);
         Docente guardado = docenteRepository.save(docente);
 
@@ -67,7 +77,7 @@ public class DocenteServiceImpl implements DocenteService {
         usuario.setPassword(passwordEncoder.encode(request.getPassword()));
         usuario.setRol(rol);
         usuario.setInstitucion(institucion);
-        usuario.setSede(null);
+        usuario.setSede(sede);
         usuarioRepository.save(usuario);
 
         return docenteMapper.toResponse(guardado);
@@ -147,6 +157,14 @@ public class DocenteServiceImpl implements DocenteService {
             );
         }
 
+        Sede sede = null;
+        if (request.getSedeId() != null) {
+            sede = sedeScopeResolver.getRequiredSede(request.getSedeId());
+            if (!sede.getInstitucion().getId().equals(institucion.getId())) {
+                throw new BusinessException("La sede no pertenece a la institución del docente");
+            }
+        }
+
         docente.setNombres(request.getNombres().trim());
         docente.setApellidos(request.getApellidos().trim());
         docente.setDocumento(request.getDocumento().trim());
@@ -160,6 +178,13 @@ public class DocenteServiceImpl implements DocenteService {
         );
 
         docente.setInstitucion(institucion);
+
+        Usuario usuario = usuarioRepository.findByEmail(request.getEmail().trim()).orElse(null);
+        if (usuario != null) {
+            usuario.setSede(sede);
+            usuario.setInstitucion(institucion);
+            usuarioRepository.save(usuario);
+        }
 
         return docenteMapper.toResponse(
                 docenteRepository.save(docente)

@@ -1,11 +1,25 @@
 package com.corporacion.tecnica.repository;
 
 import com.corporacion.tecnica.entity.Alumno;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface AlumnoRepository extends JpaRepository<Alumno, Long> {
+
+    List<Alumno> findByMateriasIdIn(List<Long> materiaIds);
+
+    @Query("""
+            select a
+            from Alumno a
+            join a.materias m
+            where m.docente.id = :docenteId
+            and a.institucion.id = :institucionId
+            """)
+    Page<Alumno> findByDocenteIdAndInstitucionId(@Param("docenteId") Long docenteId, @Param("institucionId") Long institucionId, Pageable pageable);
 
     // Métodos existentes: otros servicios todavía los utilizan
 

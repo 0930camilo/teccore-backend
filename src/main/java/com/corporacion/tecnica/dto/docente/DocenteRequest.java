@@ -33,4 +33,6 @@ public class DocenteRequest {
 
     @NotNull
     private Long institucionId;
+
+    private Long sedeId;
 }

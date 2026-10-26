@@ -21,6 +21,8 @@ import java.time.format.DateTimeParseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -130,10 +132,16 @@ public class MateriaServiceImpl implements MateriaService {
         String nombre = q == null ? "" : q;
         PageRequest pageable = PageRequest.of(page, size);
         Long sedeId = sedeScopeResolver.getCurrentSedeScope();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         Page<MateriaResponse> result;
 
-        if (sedeId != null) {
+        if (authentication != null && authentication.isAuthenticated() && authentication.getAuthorities().stream().anyMatch(a -> "ROLE_DOCENTE".equals(a.getAuthority()))) {
+            Long institucionId = institutionScopeResolver.resolveInstitutionId(null);
+            Long docenteId = obtenerDocenteAutenticadoId(institucionId);
+            result = materiaRepository.findByDocenteIdAndInstitucionId(docenteId, institucionId, pageable)
+                    .map(materiaMapper::toResponse);
+        } else if (sedeId != null) {
             result = materiaRepository
                     .findBySemestreProgramaSedeIdAndNombreContainingIgnoreCase(
                             sedeId,
@@ -288,5 +296,16 @@ public class MateriaServiceImpl implements MateriaService {
         }
 
         return materia;
+    }
+
+    private Long obtenerDocenteAutenticadoId(Long institucionId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new BusinessException("No hay un docente autenticado");
+        }
+        String correo = authentication.getName();
+        return docenteRepository.findByCorreoAndInstitucionId(correo, institucionId)
+                .map(Docente::getId)
+                .orElseThrow(() -> new BusinessException("El docente autenticado no tiene una asignación válida en esta institución"));
     }
 }

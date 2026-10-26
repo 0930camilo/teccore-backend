@@ -51,5 +51,14 @@ public interface MateriaRepository extends JpaRepository<Materia, Long> {
             "institucion",
             "docente"
     })
+    Page<Materia> findByDocenteIdAndInstitucionId(Long docenteId, Long institucionId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {
+            "semestre",
+            "semestre.programa",
+            "semestre.programa.sede",
+            "institucion",
+            "docente"
+    })
     List<Materia> findBySemestreId(Long semestreId);
 }
